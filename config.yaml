@@ -1,0 +1,35 @@
+# Project configuration. Edit before running the pipeline.
+
+study:
+  start_year: 2015          # rolling 10-year window — adjust as needed
+  end_year: 2025
+  distance: "olympic"       # 1500m swim / 40km bike / 10km run
+  sexes: ["men", "women"]   # analysed separately throughout
+
+tiers:                      # the championship races in scope
+  world_championship: true  # Grand Final RACE only (not series standings)
+  continental: true         # Olympic-distance editions only (exclude sprint)
+  olympic_games: true
+  supplementary: false      # set true to fold in WTCS/World Cup as extra training volume
+
+paths:
+  raw: "data/raw"
+  interim: "data/interim"
+  processed: "data/processed"
+  outputs: "outputs"
+
+scrape:
+  api_base: "https://api.triathlon.org/v1"
+  # Register for a free API key at https://apps-api.triathlon.org/register
+  # Then set it here OR export TRIATHLON_API_KEY=<your_key> in the shell.
+  api_key: ""
+  request_delay_seconds: 1                    # polite pacing between API calls
+  per_page: 100                               # events per page (max 100)
+
+wbgt:
+  weather_source: "open-meteo"   # "open-meteo" (no key) or "era5" (needs Copernicus CDS key)
+  race_window_hours: 2.5         # elite Olympic-distance race duration to average WBGT over
+  climatology_years: 20          # years of history per venue for the typical-conditions distribution
+
+field_strength:
+  top_n_threshold: 20            # "depth" = count of starters ranked inside top-N pre-race

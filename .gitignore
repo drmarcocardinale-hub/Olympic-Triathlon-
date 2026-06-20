@@ -1,0 +1,31 @@
+# Binary / Office documents
+*.docx
+*.pptx
+*.pdf
+
+# Figures (regeneratable)
+*.png
+*.jpg
+*.jpeg
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+
+# Node
+node_modules/
+package-lock.json
+package.json
+
+# Data (raw scraped data not committed)
+data/raw/
+outputs/
+
+# macOS
+.DS_Store
+
+# Git lock
+*.lock

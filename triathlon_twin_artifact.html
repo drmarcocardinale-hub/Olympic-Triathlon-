@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triathlon Digital Twin</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f7fa; color: #1a2332; font-size: 14px; }
+
+  .header { background: linear-gradient(135deg, #1a3a5c 0%, #0f5e9e 100%); color: white; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .header-icon { font-size: 28px; }
+  .header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .header p { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+  .main { display: grid; grid-template-columns: 320px 1fr; gap: 0; height: calc(100vh - 72px); overflow: hidden; }
+
+  /* Left panel */
+  .left { background: white; border-right: 1px solid #e2e8f0; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #64748b; margin-bottom: 8px; }
+
+  .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; }
+  .card-title { font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+  .radio-group { display: flex; gap: 8px; }
+  .radio-btn { flex: 1; padding: 7px; border: 1.5px solid #cbd5e1; border-radius: 7px; background: white; cursor: pointer; font-size: 13px; font-weight: 500; text-align: center; transition: all 0.15s; color: #475569; }
+  .radio-btn.active { border-color: #0f5e9e; background: #eff6ff; color: #0f5e9e; font-weight: 600; }
+
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 500; }
+  .field input[type=number], .field select { width: 100%; padding: 7px 10px; border: 1.5px solid #cbd5e1; border-radius: 7px; font-size: 13px; color: #1e293b; background: white; outline: none; transition: border-color 0.15s; }
+  .field input[type=number]:focus, .field select:focus { border-color: #0f5e9e; }
+
+  .slider-wrap { margin-bottom: 10px; }
+  .slider-wrap label { display: flex; justify-content: space-between; font-size: 12px; color: #64748b; margin-bottom: 5px; font-weight: 500; }
+  .slider-wrap label span { font-weight: 700; color: #1e293b; font-size: 13px; }
+  input[type=range] { width: 100%; -webkit-appearance: none; height: 5px; border-radius: 3px; outline: none; cursor: pointer; }
+
+  .wbgt-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+
+  /* Right panel */
+  .right { overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .kpi { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center; }
+  .kpi-value { font-size: 28px; font-weight: 800; color: #0f5e9e; line-height: 1; }
+  .kpi-label { font-size: 11px; color: #64748b; margin-top: 4px; font-weight: 500; }
+  .kpi-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+  .chart-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
+  .chart-card h3 { font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 12px; }
+  .chart-container { height: 200px; position: relative; }
+
+  .risk-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
+  .risk-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .risk-title { font-size: 13px; font-weight: 600; color: #334155; }
+  .risk-score-circle { width: 64px; height: 64px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; color: white; }
+  .risk-score-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .risk-bars { display: flex; flex-direction: column; gap: 6px; }
+  .risk-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+  .risk-row-label { width: 100px; color: #64748b; flex-shrink: 0; }
+  .risk-bar-bg { flex: 1; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
+  .risk-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+  .risk-recs { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+  .risk-rec { font-size: 12px; color: #475569; padding: 4px 0; display: flex; gap: 6px; align-items: flex-start; }
+
+  .strategy-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
+  .strategy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .strategy-item { background: #f8fafc; border-radius: 8px; padding: 10px; }
+  .strategy-item h4 { font-size: 11px; font-weight: 700; color: #0f5e9e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .strategy-item p { font-size: 12px; color: #475569; line-height: 1.4; }
+
+  /* Colours */
+  .low    { background: #dcfce7; color: #166534; }
+  .mod    { background: #fef9c3; color: #854d0e; }
+  .high   { background: #fed7aa; color: #9a3412; }
+  .ext    { background: #fecaca; color: #991b1b; }
+
+  .track { background: linear-gradient(to right, #22c55e 0%, #eab308 40%, #f97316 70%, #ef4444 100%); }
+
+  footer { text-align: center; padding: 8px; font-size: 10px; color: #94a3b8; background: white; border-top: 1px solid #f1f5f9; }
+
+  /* ── Info tooltip icons ──────────────────────────────────────────────── */
+  .tip { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; background:#cbd5e1; color:#475569; border-radius:50%; font-size:9px; font-weight:700; cursor:help; margin-left:4px; vertical-align:middle; position:relative; flex-shrink:0; }
+  .tip::after { content: attr(data-tip); position:absolute; left:50%; bottom:calc(100% + 6px); transform:translateX(-50%); background:#1e293b; color:#f8fafc; font-size:11px; font-weight:400; line-height:1.45; padding:7px 10px; border-radius:7px; white-space:pre-wrap; width:220px; pointer-events:none; opacity:0; transition:opacity 0.15s; z-index:100; text-transform:none; letter-spacing:0; }
+  .tip:hover::after { opacity:1; }
+
+  /* ── Podium card ─────────────────────────────────────────────────────── */
+  .podium-card { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; }
+  .podium-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:12px; }
+  .podium-kpi { background:#f8fafc; border-radius:8px; padding:10px; text-align:center; }
+  .podium-kpi-value { font-size:22px; font-weight:800; color:#0f5e9e; line-height:1; }
+  .podium-kpi-label { font-size:11px; color:#64748b; margin-top:3px; font-weight:500; }
+  .podium-kpi-sub { font-size:10px; color:#94a3b8; margin-top:1px; }
+  .podium-improve { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+  .podium-leg { background:#f8fafc; border-radius:8px; padding:8px; text-align:center; }
+  .podium-leg h5 { font-size:10px; font-weight:700; color:#0f5e9e; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:3px; }
+  .podium-leg p { font-size:11px; color:#475569; line-height:1.35; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="header-icon">🏊‍♂️🚴‍♂️🏃‍♂️</span>
+  <div>
+    <h1>Olympic Triathlon Digital Twin</h1>
+    <p>Performance prediction · Heat risk stratification · Race planning &nbsp;|&nbsp; Dr Marco Cardinale, PhD &nbsp;·&nbsp; 2026</p>
+  </div>
+</div>
+
+<div class="main">
+  <!-- ════ LEFT PANEL ════ -->
+  <div class="left">
+
+    <div>
+      <div class="section-label">Athlete Profile</div>
+      <div class="card">
+        <div class="card-title">⚥ Sex <span class="tip" data-tip="Determines which elite field norms are used. Men and women have distinct split distributions (e.g. men's run mean ≈30:45, women's ≈36:00) and separate WBGT heat coefficients (men: β=−0.006/°C, p=0.002; women: NS).">i</span></div>
+        <div class="radio-group">
+          <button class="radio-btn active" id="btn-men" onclick="setSex('men')">Men</button>
+          <button class="radio-btn" id="btn-women" onclick="setSex('women')">Women</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Historical Performance <span class="tip" data-tip="Enter split times from 3+ recent elite-level races. The model weights run (55%), bike (25%), and swim (20%) to predict run performance. More races = more reliable z-score.">i</span></div>
+
+      <!-- Mode toggle -->
+      <div class="radio-group" style="margin-bottom:12px;">
+        <button class="radio-btn active" id="btn-time" onclick="setInputMode('time')">⏱ Enter Times</button>
+        <button class="radio-btn" id="btn-zscore" onclick="setInputMode('zscore')">📊 Enter Z-scores</button>
+      </div>
+
+      <!-- TIME ENTRY MODE -->
+      <div id="time-mode">
+        <p style="font-size:11px;color:#64748b;margin-bottom:10px;">Enter split times (MM:SS) — z-scores are computed automatically from elite field norms.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+          <div style="font-size:11px;font-weight:600;color:#0f5e9e;text-align:center;">🏊 Swim <span class="tip" data-tip="1500m swim split. OLS weight: ~11% (men) / ~10% (women). Each z-unit ≈ 85–100s. Water temperature affects swim in absolute terms (buoyancy, wetsuit eligibility) but these effects cancel within the within-race z-score; WBGT captures the relevant thermal context.">i</span></div>
+          <div style="font-size:11px;font-weight:600;color:#0f5e9e;text-align:center;">🚴 Bike <span class="tip" data-tip="40km bike split. OLS weight: ~46% (men) / ~48% (women). Each z-unit ≈ 115–145s. Strong bike sets up run position and pre-loads heat stress.">i</span></div>
+          <div style="font-size:11px;font-weight:600;color:#0f5e9e;text-align:center;">🏃 Run <span class="tip" data-tip="10km run split. OLS weight: ~43% (men) / ~42% (women). Each z-unit ≈ 90–105s. Most heat-sensitive discipline — coefficient β=−0.006/°C for men (p=0.002).">i</span></div>
+          <input class="time-input" id="t-swim" type="text" placeholder="18:30" oninput="calcZFromTimes()" style="text-align:center;padding:7px 4px;border:1.5px solid #cbd5e1;border-radius:7px;font-size:13px;width:100%;">
+          <input class="time-input" id="t-bike" type="text" placeholder="55:00" oninput="calcZFromTimes()" style="text-align:center;padding:7px 4px;border:1.5px solid #cbd5e1;border-radius:7px;font-size:13px;width:100%;">
+          <input class="time-input" id="t-run"  type="text" placeholder="31:00" oninput="calcZFromTimes()" style="text-align:center;padding:7px 4px;border:1.5px solid #cbd5e1;border-radius:7px;font-size:13px;width:100%;">
+        </div>
+        <div id="time-norm-hint" style="font-size:10px;color:#94a3b8;margin-bottom:6px;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+          <div id="z-badge-swim" class="z-badge" style="text-align:center;font-size:12px;font-weight:700;padding:4px;border-radius:6px;background:#f1f5f9;color:#64748b;">—</div>
+          <div id="z-badge-bike" class="z-badge" style="text-align:center;font-size:12px;font-weight:700;padding:4px;border-radius:6px;background:#f1f5f9;color:#64748b;">—</div>
+          <div id="z-badge-run"  class="z-badge" style="text-align:center;font-size:12px;font-weight:700;padding:4px;border-radius:6px;background:#f1f5f9;color:#64748b;">—</div>
+        </div>
+      </div>
+
+      <!-- ZSCORE DIRECT MODE -->
+      <div id="zscore-mode" style="display:none;">
+        <p style="font-size:11px;color:#64748b;margin-bottom:10px;">Enter z-scores directly (mean of last 3+ races; negative = faster vs field).</p>
+        <div class="field">
+          <label>🏊 Swim z-score <span class="tip" data-tip="Standardised swim time vs elite field. Computed as (your time − field mean) / field SD. Negative = faster. OLS weight: ~11% (men) / ~10% (women). Range: elite top-10 ≈ −1.5 to −2.0.">i</span></label>
+          <input type="number" id="z-swim-direct" step="0.1" value="0.0" min="-3" max="3" oninput="update()">
+        </div>
+        <div class="field">
+          <label>🚴 Bike z-score <span class="tip" data-tip="Standardised 40km bike time. OLS weight: ~46% (men) / ~48% (women). A z=−1.0 means ≈115s faster than field mean (men) or ≈145s (women). Strong bike also accumulates earlier heat stress on the run.">i</span></label>
+          <input type="number" id="z-bike-direct" step="0.1" value="0.0" min="-3" max="3" oninput="update()">
+        </div>
+        <div class="field">
+          <label>🏃 Run z-score <span class="tip" data-tip="Standardised 10km run time. OLS weight: ~43% (men) / ~42% (women). z=−1.0 ≈ 90s faster than field mean (men) or 105s (women). This is also the discipline most degraded by heat (men: β=−0.006/°C, p=0.002).">i</span></label>
+          <input type="number" id="z-run-direct" step="0.1" value="0.0" min="-3" max="3" oninput="update()">
+        </div>
+      </div>
+
+      <!-- SHARED FIELDS -->
+      <div class="field" style="margin-top:10px;">
+        <label>Age (years) <span class="tip" data-tip="Used in the heat-risk score only (not performance prediction). Athletes >35 yrs score +5 pts; >40 yrs +8 pts, reflecting slower thermoregulatory capacity and higher EHI incidence in masters athletes.">i</span></label>
+        <input type="number" id="age" step="1" value="28" min="18" max="55" oninput="update()">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🌡️ Race-Day Conditions <span class="tip" data-tip="Environmental conditions on race day. WBGT integrates air temp, humidity, wind, and solar radiation into a single thermal stress index. IOC/WMA action thresholds: &lt;18°C Low · 18–23°C Moderate · 23–28°C High · &gt;28°C Extreme. Water temperature was evaluated for its effect on swim performance (the only discipline in the water) across 59 events: after WBGT adjustment, no independent effect was found (partial r &lt; 0.03, p &gt; 0.55). WBGT is sufficient to capture the full relevant thermal load.">i</span></div>
+
+      <div class="slider-wrap">
+        <label>WBGT <span class="tip" data-tip="Wet Bulb Globe Temperature. WBGT = 0.7 × natural wet-bulb + 0.2 × globe temp + 0.1 × dry-bulb. The most validated index for exertional heat illness risk in sport. Modelled here using the Liljegren (2008) physical model.">i</span> <span id="wbgt-display">19.3 °C</span></label>
+        <input type="range" id="wbgt-slider" min="8" max="32" step="0.5" value="19.3"
+          style="background: linear-gradient(to right, #22c55e 0%, #eab308 45%, #f97316 68%, #ef4444 100%)"
+          oninput="document.getElementById('wbgt-display').textContent=parseFloat(this.value).toFixed(1)+' °C'; update()">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:2px;">
+          <span>8°C</span><span>18°C</span><span>23°C</span><span>28°C</span><span>32°C</span>
+        </div>
+      </div>
+
+      <div class="slider-wrap" style="margin-top:10px;">
+        <label>Wind speed <span class="tip" data-tip="Race-day wind speed (m/s). Higher wind increases convective heat loss, reducing WBGT. Typical race conditions: 1–4 m/s. Calm days (&lt;1 m/s) significantly increase thermal stress at high temperatures.">i</span> <span id="wind-display">2.0 m/s</span></label>
+        <input type="range" id="wind-slider" min="0.5" max="10" step="0.5" value="2.0"
+          oninput="document.getElementById('wind-display').textContent=parseFloat(this.value).toFixed(1)+' m/s'; update()">
+      </div>
+
+      <div class="slider-wrap" style="margin-top:6px;">
+        <label>Solar radiation <span class="tip" data-tip="Incoming solar radiation (W/m²). Clear summer midday: 800–1000 W/m². Overcast: &lt;300 W/m². Drives globe temperature in the Liljegren WBGT model via a clearness index decomposition into beam and diffuse components.">i</span> <span id="solar-display">600 W/m²</span></label>
+        <input type="range" id="solar-slider" min="0" max="1200" step="50" value="600"
+          oninput="document.getElementById('solar-display').textContent=this.value+' W/m²'; update()">
+      </div>
+
+      <div class="slider-wrap" style="margin-top:6px;">
+        <label>Water temp 🏊 <span class="tip" data-tip="Water temperature for the swim leg. Below 20°C: wetsuits permitted (ITU rule). Water temp was evaluated for its independent effect on swim performance: after WBGT adjustment, no significant effect was found (partial r &lt; 0.03, p &gt; 0.55). Wetsuit benefit cancels within z-score standardisation.">i</span> <span id="water-display">20.0 °C</span>
+          <span id="wetsuit-badge" style="margin-left:6px;font-size:10px;padding:2px 7px;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:600;">Wetsuit ✓</span>
+        </label>
+        <input type="range" id="water-slider" min="10" max="32" step="0.5" value="20.0"
+          style="background:linear-gradient(to right,#3b82f6 0%,#3b82f6 43%,#22c55e 43%,#22c55e 100%)"
+          oninput="updateWaterDisplay(); update()">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:2px;">
+          <span>10°C</span><span>20°C ↑ wetsuit threshold</span><span>32°C</span>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div class="section-label" style="margin-bottom:6px;">IOC/WMA Alert Level</div>
+        <div id="wbgt-alert" class="wbgt-badge low">🟢 Low risk</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏟️ Venue Presets <span class="tip" data-tip="Select a known race venue to load typical environmental conditions. Conditions are historical medians from race records. For future-race forecasting, use the section below to fetch live weather data from Open-Meteo.">i</span></div>
+      <div class="field">
+        <select id="venue-select" onchange="loadVenue()">
+          <option value="">— Select a venue —</option>
+          <option value="19.3,2,600">── Population mean (19.3°C) ──</option>
+          <optgroup label="🇪🇺 Europe">
+            <option value="13.8,4.5,360">Glasgow / Strathclyde, Scotland (Aug)</option>
+            <option value="16.2,4.0,400">Rotterdam, Netherlands (Sep)</option>
+            <option value="17.5,3.0,520">Tartu, Estonia (Jul)</option>
+            <option value="18.8,2.5,560">Kraków, Poland (Jun)</option>
+            <option value="16.5,2.5,580">Kitzbühel, Austria (Jun)</option>
+            <option value="19.5,2.5,620">Geneva, Switzerland (Jul)</option>
+            <option value="20.2,2.0,640">Lausanne, Switzerland (Aug)</option>
+            <option value="21.5,2.5,660">Paris, France (Jul)</option>
+            <option value="18.5,3.0,510">Pontevedra, Spain (Sep)</option>
+            <option value="21.0,3.5,560">Torremolinos, Spain (Oct)</option>
+            <option value="19.5,3.5,660">Lisbon, Portugal (May)</option>
+            <option value="23.5,3.5,710">Baku, Azerbaijan (Jun)</option>
+          </optgroup>
+          <optgroup label="🌍 Middle East &amp; Africa">
+            <option value="24.0,3.0,700">Abu Dhabi, UAE (Nov)</option>
+            <option value="26.8,3.0,860">Sharm El Sheikh, Egypt (May)</option>
+            <option value="18.5,4.0,610">Rabat, Morocco (Apr)</option>
+            <option value="21.5,3.5,700">Yasmine Hammamet, Tunisia (May)</option>
+            <option value="22.5,4.0,620">Buffalo City / E. London, South Africa (Mar)</option>
+          </optgroup>
+          <optgroup label="🌏 Asia &amp; Pacific">
+            <option value="28.0,2.0,760">Tokyo, Japan (Jul)</option>
+            <option value="18.0,2.5,610">Hiroshima / Hatsukaichi, Japan (Apr)</option>
+            <option value="28.0,2.5,750">New Taipei City, Taiwan (Jun)</option>
+            <option value="25.5,2.0,600">Hangzhou, China (Sep)</option>
+            <option value="28.1,1.5,850">Singapore (Jun)</option>
+            <option value="28.5,1.5,850">Palembang / Jakabaring, Indonesia (Jul)</option>
+            <option value="29.5,2.0,860">Honiara, Solomon Islands (Nov)</option>
+            <option value="19.0,3.5,560">Gold Coast, Australia (Sep)</option>
+            <option value="18.5,4.0,660">Devonport, Tasmania (Feb–Mar)</option>
+            <option value="20.0,4.0,600">Wollongong, Australia (Oct)</option>
+            <option value="19.5,4.0,640">Gisborne, New Zealand (Mar)</option>
+          </optgroup>
+          <optgroup label="🌎 Americas">
+            <option value="19.5,3.0,600">Edmonton, Canada (Aug)</option>
+            <option value="23.0,3.0,620">Toronto, Canada (Jul)</option>
+            <option value="20.5,4.0,560">Chicago, USA (Sep)</option>
+            <option value="28.0,2.5,810">Monterrey, Mexico (May)</option>
+            <option value="28.5,3.5,760">Cozumel, Mexico (Sep)</option>
+            <option value="21.5,4.0,600">Buenos Aires, Argentina (Nov)</option>
+            <option value="20.0,3.5,700">Santiago, Chile (Nov)</option>
+            <option value="19.5,2.0,650">Brasilia, Brazil (Jun)</option>
+            <option value="23.0,3.5,520">Rio de Janeiro, Brazil (Aug)</option>
+            <option value="16.5,3.0,380">Lima, Peru (Jul)</option>
+            <option value="26.0,3.0,700">Puerto Lopez, Ecuador (Oct)</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:0;">
+      <div class="card-title">📅 Future Race — Fetch Weather <span class="tip" data-tip="Enter the race venue coordinates and date. Fetches forecast (up to 16 days ahead) or historical climate data from Open-Meteo. WBGT is estimated using the Stull (2011) wet-bulb approximation + globe temperature from solar/wind. Water temp estimated from air temperature: T_water ≈ 0.75 × T_air + 4°C.">i</span></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+        <div class="field" style="margin-bottom:0;">
+          <label style="font-size:11px;">Latitude</label>
+          <input type="number" id="venue-lat" step="0.01" placeholder="e.g. 48.85" min="-90" max="90"
+            style="width:100%;padding:6px 8px;border:1.5px solid #cbd5e1;border-radius:7px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label style="font-size:11px;">Longitude</label>
+          <input type="number" id="venue-lon" step="0.01" placeholder="e.g. 2.35" min="-180" max="180"
+            style="width:100%;padding:6px 8px;border:1.5px solid #cbd5e1;border-radius:7px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:8px;">
+        <label style="font-size:11px;">Race date</label>
+        <input type="date" id="venue-date"
+          style="width:100%;padding:6px 8px;border:1.5px solid #cbd5e1;border-radius:7px;font-size:13px;box-sizing:border-box;">
+      </div>
+
+      <button onclick="fetchVenueWeather()"
+        style="width:100%;padding:8px;background:#0f5e9e;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+        🌤️ Estimate Conditions
+      </button>
+
+      <div id="fetch-status" style="font-size:11px;color:#64748b;margin-top:8px;min-height:16px;text-align:center;"></div>
+
+      <div id="fetch-result" style="display:none;margin-top:10px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+        <div style="font-size:11px;font-weight:700;color:#1e3a5f;margin-bottom:6px;" id="fetch-venue-label">—</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div style="background:white;padding:6px 8px;border-radius:6px;border:1px solid #e2e8f0;">
+            <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Est. WBGT</div>
+            <div style="font-size:16px;font-weight:700;color:#0f5e9e;" id="fetch-wbgt">—</div>
+          </div>
+          <div style="background:white;padding:6px 8px;border-radius:6px;border:1px solid #e2e8f0;">
+            <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Est. Water Temp</div>
+            <div style="font-size:16px;font-weight:700;color:#3b82f6;" id="fetch-water">—</div>
+          </div>
+          <div style="background:white;padding:6px 8px;border-radius:6px;border:1px solid #e2e8f0;">
+            <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Air Temp</div>
+            <div style="font-size:14px;font-weight:600;color:#64748b;" id="fetch-air">—</div>
+          </div>
+          <div style="background:white;padding:6px 8px;border-radius:6px;border:1px solid #e2e8f0;">
+            <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Wind / Solar</div>
+            <div style="font-size:14px;font-weight:600;color:#64748b;" id="fetch-wind-solar">—</div>
+          </div>
+        </div>
+        <button onclick="applyFetchedConditions()"
+          style="width:100%;margin-top:8px;padding:6px;background:#16a34a;color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">
+          ✅ Apply to Digital Twin
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ════ RIGHT PANEL ════ -->
+  <div class="right">
+
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-value" id="kpi-zrun">0.00</div>
+        <div class="kpi-label">Predicted Run z-score <span class="tip" data-tip="Composite run z-score predicted from historical performance and race-day WBGT. Formula: 0.55×z_run + 0.25×z_bike + 0.20×z_swim + β_heat×(WBGT−19.3). Negative = faster than field average.">i</span></div>
+        <div class="kpi-sub" id="kpi-zrun-interp">At population mean</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value" id="kpi-pos">50<span style="font-size:16px">th</span></div>
+        <div class="kpi-label">Est. Finish Percentile <span class="tip" data-tip="Estimated finish position as a percentile of the race field, derived from the predicted run z-score assuming a normal distribution of run times. Lower percentile = better finish (1st percentile = fastest).">i</span></div>
+        <div class="kpi-sub" id="kpi-pos-sub">of race field</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value" id="kpi-heat-effect" style="font-size:20px;">—</div>
+        <div class="kpi-label">WBGT Effect on Run <span class="tip" data-tip="The heat penalty in z-score units at the current WBGT vs. the study population mean (19.3°C). Men: β=−0.006/°C (p=0.002). Women: β=0 (NS). A value of −0.06 means the athlete is predicted to run 0.06z slower than at 19.3°C.">i</span></div>
+        <div class="kpi-sub">vs population mean (19.3°C)</div>
+      </div>
+    </div>
+
+    <div class="podium-card">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;">
+        <span style="font-size:13px;font-weight:600;color:#334155;">🏆 Podium Analysis</span>
+        <span class="tip" data-tip="Probabilities are based on an OLS-weighted composite z-score across all three disciplines (swim ~11%, bike ~46%, run ~43% men / swim ~10%, bike ~48%, run ~42% women), including the WBGT heat penalty on run. Weights derived from OLS regression of z_total on discipline z-scores. Thresholds: men ≈55 starters (top-3 ≈ z=−1.60), women ≈45 starters (top-3 ≈ z=−1.50). Model residual σ=0.75.">i</span>
+        <span style="font-size:11px;color:#94a3b8;margin-left:auto;">n=3,449 athlete-races</span>
+      </div>
+
+      <!-- Dual dial gauges -->
+      <div style="display:flex;gap:4px;align-items:flex-end;">
+        <div style="flex:1;text-align:center;">
+          <svg id="gauge-podium" viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;"></svg>
+          <div style="font-size:11px;font-weight:600;color:#334155;margin-top:-2px;">Podium (Top 3)</div>
+          <div style="font-size:10px;color:#94a3b8;">vs ≈55 starters (men) / 45 (women)</div>
+        </div>
+        <div style="flex:1;text-align:center;">
+          <svg id="gauge-top10" viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;"></svg>
+          <div style="font-size:11px;font-weight:600;color:#334155;margin-top:-2px;">Top 10</div>
+          <div style="font-size:10px;color:#94a3b8;">Points / national selection zone</div>
+        </div>
+      </div>
+
+      <!-- Gap info row -->
+      <div style="display:flex;gap:10px;margin-top:10px;">
+        <div style="flex:1;background:#f8fafc;border-radius:8px;padding:9px;text-align:center;">
+          <div style="font-size:17px;font-weight:800;" id="podium-gap">—</div>
+          <div style="font-size:11px;color:#64748b;">Gap to podium pace</div>
+          <div style="font-size:10px;color:#94a3b8;" id="podium-gap-time">—</div>
+        </div>
+        <div style="flex:1;background:#f8fafc;border-radius:8px;padding:9px;text-align:center;">
+          <div style="font-size:17px;font-weight:800;color:#0f5e9e;" id="composite-z-display">0.00</div>
+          <div style="font-size:11px;color:#64748b;">Overall composite z</div>
+          <div style="font-size:10px;color:#94a3b8;" id="composite-z-sub">all disciplines · OLS-weighted</div>
+        </div>
+      </div>
+
+      <!-- Per-leg improvement breakdown -->
+      <div id="podium-leg-breakdown" class="podium-improve" style="margin-top:8px;"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="chart-card">
+        <h3>🏃 Run Performance vs WBGT</h3>
+        <div class="chart-container" style="height:230px;">
+          <canvas id="scenario-chart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>🚴 Bike Pacing Scenarios vs WBGT</h3>
+        <div class="chart-container" style="height:230px;">
+          <canvas id="bike-scenario-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-top:10px;">
+      <h3>🏊 Swim Context vs Water Temperature</h3>
+      <div class="chart-container" style="height:220px;">
+        <canvas id="swim-water-chart"></canvas>
+      </div>
+      <div style="font-size:10px;color:#94a3b8;margin-top:4px;text-align:center;">
+        Dashed line: wetsuit threshold (20°C). Water temp has no significant independent effect on z_swim after WBGT adjustment (partial r &lt; 0.03, p &gt; 0.55). Marker shows current race water temp.
+      </div>
+    </div>
+
+    <div class="risk-card">
+      <div class="risk-header">
+        <div class="risk-title">🌍 Environmental Challenge Expected</div>
+        <div id="risk-circle" class="risk-score-circle" style="background:#22c55e">
+          <span id="risk-score-num">0</span>
+          <span class="risk-score-label" id="risk-cat-label">LOW</span>
+        </div>
+      </div>
+      <div class="risk-bars">
+        <div class="risk-row">
+          <span class="risk-row-label">WBGT thermal load</span>
+          <div class="risk-bar-bg"><div class="risk-bar-fill" id="bar-wbgt" style="width:0%;background:#ef4444"></div></div>
+          <span id="bar-wbgt-val" style="font-size:11px;width:28px;text-align:right;color:#64748b">0</span>
+        </div>
+        <div class="risk-row">
+          <span class="risk-row-label">Solar radiation</span>
+          <div class="risk-bar-bg"><div class="risk-bar-fill" id="bar-solar" style="width:0%;background:#f97316"></div></div>
+          <span id="bar-solar-val" style="font-size:11px;width:28px;text-align:right;color:#64748b">0</span>
+        </div>
+        <div class="risk-row">
+          <span class="risk-row-label">Low wind (still air)</span>
+          <div class="risk-bar-bg"><div class="risk-bar-fill" id="bar-wind" style="width:0%;background:#eab308"></div></div>
+          <span id="bar-wind-val" style="font-size:11px;width:28px;text-align:right;color:#64748b">0</span>
+        </div>
+        <div class="risk-row">
+          <span class="risk-row-label">Age factor</span>
+          <div class="risk-bar-bg"><div class="risk-bar-fill" id="bar-age" style="width:0%;background:#6366f1"></div></div>
+          <span id="bar-age-val" style="font-size:11px;width:28px;text-align:right;color:#64748b">0</span>
+        </div>
+      </div>
+      <div class="risk-recs" id="risk-recs"></div>
+    </div>
+
+    <div class="strategy-card">
+      <div class="card-title">📋 Race-Day Strategy Guidance</div>
+      <div id="strategy-content"></div>
+    </div>
+
+  </div>
+</div>
+
+<footer>🏊‍♂️🚴‍♂️🏃‍♂️ &nbsp; Olympic Triathlon Digital Twin · Dr Marco Cardinale, PhD · 2026 · Population coefficients from mixed-effects model (n=3,449 athlete-races). For coaching use only.</footer>
+
+<script>
+// ── Model coefficients (from study) ──────────────────────────────────────
+const BETA = {
+  z_swim: 0.20, z_bike: 0.25, z_run: 0.55,
+  heat_men: -0.006,    // z_run per °C above mean (p=0.002)
+  heat_women: 0.000,   // not significant
+  wbgt_mean: 19.3
+};
+
+// Elite field norms (mean ± SD in seconds) — from study population
+// Olympic distance: 1500m swim / 40km bike / 10km run
+const NORMS = {
+  men:   { swim: [1110, 85],  bike: [3285, 115], run: [1845, 90]  },
+  women: { swim: [1230, 100], bike: [3720, 145], run: [2160, 105] }
+};
+
+// Podium analysis constants (derived from study field-size distributions)
+// Top-3 z-threshold = Φ⁻¹(3/N) for field size N
+// σ_residual = model residual SD (mixed-effects, R²≈0.38 → σ_res≈0.79, rounded to 0.75)
+const PODIUM = {
+  men:   { thr3: -1.60, thr10: -0.92, field: 55, sigma: 0.75 },
+  women: { thr3: -1.50, thr10: -0.77, field: 45, sigma: 0.75 }
+};
+
+let sex = 'men';
+let inputMode = 'time';  // 'time' or 'zscore'
+let scenarioChart = null;
+let bikeScenarioChart = null;
+let swimWaterChart = null;
+
+// ── WBGT background zones — module-level so plugins don't need closures ──
+const WBGT_ZONES = [
+  { lo: 0,  hi: 18, color: 'rgba(220,252,231,0.45)' },
+  { lo: 18, hi: 23, color: 'rgba(254,249,195,0.45)' },
+  { lo: 23, hi: 28, color: 'rgba(255,237,213,0.45)' },
+  { lo: 28, hi: 33, color: 'rgba(254,226,226,0.45)' },
+];
+let _currentWbgt = 19.3;  // updated in update() before charts render
+
+function _drawBgZones(chart) {
+  const { ctx, chartArea: ca, scales: { x } } = chart;
+  if (!ca) return;
+  WBGT_ZONES.forEach(({ lo, hi, color }) => {
+    const x1 = Math.max(ca.left,  x.getPixelForValue(lo));
+    const x2 = Math.min(ca.right, x.getPixelForValue(hi));
+    if (x2 > x1) { ctx.fillStyle = color; ctx.fillRect(x1, ca.top, x2 - x1, ca.bottom - ca.top); }
+  });
+  const xPx = x.getPixelForValue(_currentWbgt);
+  if (xPx >= ca.left && xPx <= ca.right) {
+    ctx.save();
+    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = 'rgba(239,68,68,0.65)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(xPx, ca.top); ctx.lineTo(xPx, ca.bottom); ctx.stroke();
+    ctx.restore();
+  }
+}
+const pluginBgRun  = { id: 'bgRun',  beforeDraw: _drawBgZones };
+const pluginBgBike = { id: 'bgBike', beforeDraw: _drawBgZones };
+
+function setSex(s) {
+  sex = s;
+  document.getElementById('btn-men').classList.toggle('active', s === 'men');
+  document.getElementById('btn-women').classList.toggle('active', s === 'women');
+  updateNormHint();
+  calcZFromTimes();
+  update();
+}
+
+function setInputMode(mode) {
+  inputMode = mode;
+  document.getElementById('btn-time').classList.toggle('active', mode === 'time');
+  document.getElementById('btn-zscore').classList.toggle('active', mode === 'zscore');
+  document.getElementById('time-mode').style.display   = mode === 'time'   ? '' : 'none';
+  document.getElementById('zscore-mode').style.display = mode === 'zscore' ? '' : 'none';
+  update();
+}
+
+function parseMmSs(str) {
+  // Accepts MM:SS or M:SS or total seconds as a plain number
+  if (!str || !str.trim()) return null;
+  str = str.trim();
+  if (/^\d+$/.test(str)) return parseInt(str);
+  const parts = str.split(':');
+  if (parts.length === 2) {
+    const m = parseInt(parts[0]), s = parseInt(parts[1]);
+    if (!isNaN(m) && !isNaN(s)) return m * 60 + s;
+  }
+  if (parts.length === 3) {  // H:MM:SS
+    const h = parseInt(parts[0]), m = parseInt(parts[1]), s = parseInt(parts[2]);
+    if (!isNaN(h) && !isNaN(m) && !isNaN(s)) return h * 3600 + m * 60 + s;
+  }
+  return null;
+}
+
+function secToMmSs(sec) {
+  const m = Math.floor(sec / 60), s = Math.round(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function zBadgeStyle(z) {
+  if (z < -1.5) return 'background:#dcfce7;color:#166534';  // top — green
+  if (z < -0.5) return 'background:#dbeafe;color:#1e40af';  // above avg — blue
+  if (z <  0.5) return 'background:#f1f5f9;color:#475569';  // average — grey
+  if (z <  1.5) return 'background:#fef9c3;color:#854d0e';  // below avg — yellow
+  return 'background:#fecaca;color:#991b1b';                 // poor — red
+}
+
+function updateNormHint() {
+  const n = NORMS[sex];
+  document.getElementById('time-norm-hint').textContent =
+    `Field norms (${sex}): swim ${secToMmSs(n.swim[0])}±${Math.round(n.swim[1]/60*10)/10}min  `+
+    `bike ${secToMmSs(n.bike[0])}±${Math.round(n.bike[1]/60*10)/10}min  `+
+    `run ${secToMmSs(n.run[0])}±${Math.round(n.run[1]/60*10)/10}min`;
+}
+
+function calcZFromTimes() {
+  const n = NORMS[sex];
+  const segments = [
+    { inputId: 't-swim', badgeId: 'z-badge-swim', norm: n.swim },
+    { inputId: 't-bike', badgeId: 'z-badge-bike', norm: n.bike },
+    { inputId: 't-run',  badgeId: 'z-badge-run',  norm: n.run  },
+  ];
+  for (const seg of segments) {
+    const raw = document.getElementById(seg.inputId).value;
+    const secs = parseMmSs(raw);
+    const badge = document.getElementById(seg.badgeId);
+    if (secs !== null) {
+      const z = (secs - seg.norm[0]) / seg.norm[1];
+      badge.textContent = (z >= 0 ? '+' : '') + z.toFixed(2) + ' z';
+      badge.style.cssText = `text-align:center;font-size:12px;font-weight:700;padding:4px;border-radius:6px;${zBadgeStyle(z)}`;
+    } else {
+      badge.textContent = '—';
+      badge.style.cssText = 'text-align:center;font-size:12px;font-weight:700;padding:4px;border-radius:6px;background:#f1f5f9;color:#64748b';
+    }
+  }
+  update();
+}
+
+function getZScores() {
+  if (inputMode === 'zscore') {
+    return {
+      zSwim: parseFloat(document.getElementById('z-swim-direct').value) || 0,
+      zBike: parseFloat(document.getElementById('z-bike-direct').value) || 0,
+      zRun:  parseFloat(document.getElementById('z-run-direct').value)  || 0,
+    };
+  }
+  // Time mode — compute from norms
+  const n = NORMS[sex];
+  const tSwim = parseMmSs(document.getElementById('t-swim').value);
+  const tBike = parseMmSs(document.getElementById('t-bike').value);
+  const tRun  = parseMmSs(document.getElementById('t-run').value);
+  return {
+    zSwim: tSwim !== null ? (tSwim - n.swim[0]) / n.swim[1] : 0,
+    zBike: tBike !== null ? (tBike - n.bike[0]) / n.bike[1] : 0,
+    zRun:  tRun  !== null ? (tRun  - n.run[0])  / n.run[1]  : 0,
+  };
+}
+
+// loadVenue() is defined below with VENUE_COORDS + water temp support
+
+// Normal CDF approximation (Hart 1968)
+function normCDF(x) {
+  const t = 1 / (1 + 0.2316419 * Math.abs(x));
+  const poly = t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  const p = 1 - 0.3989422803 * Math.exp(-0.5 * x * x) * poly;
+  return x >= 0 ? p : 1 - p;
+}
+
+function predictZRun(zSwim, zBike, zRun, wbgt, heatSlope) {
+  const beta_heat = heatSlope !== 0 ? heatSlope : (sex === 'men' ? BETA.heat_men : BETA.heat_women);
+  const base = BETA.z_swim * zSwim + BETA.z_bike * zBike + BETA.z_run * zRun;
+  return base + beta_heat * (wbgt - BETA.wbgt_mean);
+}
+
+function heatRiskScore(wbgt, wind, solar, age) {
+  // WBGT thermal load (0–60 pts) — primary driver
+  const wbgt_pts = Math.max(0, Math.min(60, (wbgt - 8) / (32 - 8) * 60));
+  // Solar radiation component (0–20 pts): high sun → extra radiant load
+  const solar_pts = Math.max(0, Math.min(20, solar / 1200 * 20));
+  // Low wind = poor convective cooling (0–12 pts): calm (<1 m/s) is worst
+  const wind_pts = Math.max(0, Math.min(12, Math.max(0, (3 - wind) / 3) * 12));
+  // Age factor
+  const age_pts = age > 40 ? 8 : age > 35 ? 5 : 0;
+
+  const total = Math.round(Math.min(100, wbgt_pts + solar_pts + wind_pts + age_pts));
+  return { total, wbgt_pts: Math.round(wbgt_pts), solar_pts: Math.round(solar_pts), wind_pts: Math.round(wind_pts), age_pts };
+}
+
+function wbgtAlert(wbgt) {
+  if (wbgt < 18) return { cls: 'low', icon: '🟢', text: 'Low risk (<18°C)' };
+  if (wbgt < 23) return { cls: 'mod', icon: '🟡', text: 'Moderate (18–23°C)' };
+  if (wbgt < 28) return { cls: 'high', icon: '🟠', text: 'High (23–28°C)' };
+  return { cls: 'ext', icon: '🔴', text: 'Extreme (>28°C)' };
+}
+
+function riskColour(score) {
+  if (score < 25) return '#22c55e';
+  if (score < 50) return '#eab308';
+  if (score < 75) return '#f97316';
+  return '#ef4444';
+}
+
+function riskCategory(score) {
+  if (score < 25) return 'LOW';
+  if (score < 50) return 'MODERATE';
+  if (score < 75) return 'HIGH';
+  return 'EXTREME';
+}
+
+function getRecommendations(score, wbgt, sex) {
+  const recs = [];
+  if (wbgt >= 28) recs.push('🚨 Extreme WBGT — ensure medical team is on-course with cooling stations every 2.5 km.');
+  if (wbgt >= 23) recs.push('🧊 Pre-cool athlete with ice vest 20 min before start; ice sponges every km on run.');
+  if (score >= 75) recs.push('⚠️ High individual risk profile — consider withdrawal if WBGT exceeds 30°C.');
+  if (score >= 50) recs.push('📡 Assign dedicated observer on run course; establish withdrawal criteria pre-race.');
+  if (score >= 25 && wbgt >= 18) recs.push('🏃 Reduce target run pace by ' + (wbgt >= 28 ? '8–12%' : wbgt >= 23 ? '4–7%' : '1–3%') + ' vs optimal; allow negative split strategy.');
+  if (score < 25) recs.push('✅ Low risk profile for current conditions — standard race-day protocols apply.');
+  return recs.slice(0, 4);
+}
+
+// IOC/WMA risk levels with typical WBGT representative values for forecast
+const RISK_LEVELS = [
+  { label: 'Low',      icon: '🟢', cls: 'low',  range: '<18°C',    mid: 14,   adj: '—',       adjPct: 0,   test: w => w < 18  },
+  { label: 'Moderate', icon: '🟡', cls: 'mod',  range: '18–23°C',  mid: 20.5, adj: '1–3%',    adjPct: 2,   test: w => w >= 18 && w < 23 },
+  { label: 'High',     icon: '🟠', cls: 'high', range: '23–28°C',  mid: 25.5, adj: '4–7%',    adjPct: 5.5, test: w => w >= 23 && w < 28 },
+  { label: 'Extreme',  icon: '🔴', cls: 'ext',  range: '>28°C',    mid: 30,   adj: '8–12%',   adjPct: 10,  test: w => w >= 28 },
+];
+
+function getPacingStrategy(zSwim, zBike, zRun, zRunPred, wbgt, slope) {
+  const beta_h = slope !== 0 ? slope : (sex === 'men' ? BETA.heat_men : BETA.heat_women);
+  const base   = BETA.z_swim * zSwim + BETA.z_bike * zBike + BETA.z_run * zRun;
+  const n      = NORMS[sex];
+
+  // Build per-risk-level forecast rows
+  const forecast = RISK_LEVELS.map(lv => {
+    const zPred = base + beta_h * (lv.mid - BETA.wbgt_mean);
+    const pct   = (1 - normCDF(zPred)) * 100;  // estimated finish percentile at this level
+    const isCurrent = lv.test(wbgt);
+    // Run time impact vs Low baseline
+    const zLow      = base + beta_h * (14 - BETA.wbgt_mean);
+    const deltaZ    = zPred - zLow;
+    const deltaSec  = deltaZ * n.run[1];
+    return { ...lv, zPred, pct, isCurrent, deltaZ, deltaSec };
+  });
+
+  const start_pace = wbgt >= 23
+    ? 'Conservative first 2 km — hold back to manage heat accumulation.'
+    : 'Normal first km, gauge conditions before committing to race pace.';
+  const cooling = wbgt >= 28 ? 'Ice at every aid station — neck, wrists, head. Pre-cool with ice vest 20 min before start.'
+                : wbgt >= 23 ? 'Ice sponges every km; cold water on neck and head.'
+                : 'Standard sponge/water at aid stations.';
+
+  return { forecast, start_pace, cooling };
+}
+
+function ordinal(n) {
+  const s = ['th','st','nd','rd'], v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
+
+// ── Empirical OLS discipline weights ─────────────────────────────────────
+// Derived from OLS regression: z_total ~ z_swim + z_bike + z_run
+// Coefficients normalised to unit sum (β / Σβ)
+// Men: swim=0.107, bike=0.456, run=0.434  (sr²: swim=0.019, bike=0.134, run=0.128)
+// Women: swim=0.099, bike=0.479, run=0.419  (sr²: swim=0.016, bike=0.132, run=0.100)
+const DISCIPLINE_WEIGHTS = {
+  men:   { swim: 0.107, bike: 0.456, run: 0.434 },
+  women: { swim: 0.099, bike: 0.479, run: 0.419 }
+};
+
+// ── Composite z-score (OLS-weighted across all three disciplines) ─────────
+// Weights from empirical regression, not time fractions
+// Normalised to unit variance assuming inter-discipline r ≈ 0.35 (typical triathlon)
+function compositeZ(zSwim, zBike, zRunPred) {
+  const dw = DISCIPLINE_WEIGHTS[sex];
+  const ws = dw.swim, wb = dw.bike, wr = dw.run;
+  const raw = ws * zSwim + wb * zBike + wr * zRunPred;
+  // SD of raw composite with r=0.35 between disciplines
+  const r = 0.35;
+  const varRaw = ws*ws + wb*wb + wr*wr + 2*r*(ws*wb + ws*wr + wb*wr);
+  return raw / Math.sqrt(varRaw);   // normalised to ~unit z-scale
+}
+
+// ── SVG dial gauge ────────────────────────────────────────────────────────
+// Semicircle: 0% at left edge, maxPct at right edge
+// Uses sqrt scaling so low probabilities are visually distinguishable
+function updateGauge(svgId, prob, maxPct) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+
+  const cx=100, cy=96, r=68, sw=13;
+  const clampedProb = Math.max(0, Math.min(maxPct, prob));
+
+  // Sqrt scale for visual sensitivity at low end
+  const scaledFrac = Math.sqrt(clampedProb / maxPct);
+
+  // Convert fraction [0,1] → math angle [180°, 0°] → SVG x,y
+  function ptOnArc(frac) {
+    const a = (1 - frac) * Math.PI;            // 0 → π (left), 1 → 0 (right)
+    return [cx + r * Math.cos(a), cy - r * Math.sin(a)];
+  }
+
+  // Background arc: full semicircle left→right through top
+  const [lx, ly] = ptOnArc(0);
+  const [rx, ry] = ptOnArc(1);
+  const bgArc = `M ${lx} ${ly} A ${r} ${r} 0 0 1 ${rx} ${ry}`;
+
+  // Fill arc: left → current scaled position
+  let fillArc = '';
+  if (scaledFrac > 0.005) {
+    const [ex, ey] = ptOnArc(scaledFrac);
+    const largeArc = scaledFrac >= 0.5 ? 1 : 0;
+    fillArc = `M ${lx} ${ly} A ${r} ${r} 0 ${largeArc} 1 ${ex.toFixed(2)} ${ey.toFixed(2)}`;
+  }
+
+  // Needle from center to arc (scaled position)
+  const needleA = (1 - scaledFrac) * Math.PI;
+  const nr = r - 12;
+  const nx = cx + nr * Math.cos(needleA);
+  const ny = cy - nr * Math.sin(needleA);
+
+  // Colour by actual probability (not scaled)
+  const color = prob >= 20 ? '#16a34a'
+              : prob >= 8  ? '#0f5e9e'
+              : prob >= 3  ? '#b45309'
+              : '#94a3b8';
+
+  // Tick marks at actual 0, 25%, 50%, 75%, 100% of maxPct scale
+  const tickProbs = [0, Math.round(maxPct*0.25), Math.round(maxPct*0.5), Math.round(maxPct*0.75), maxPct];
+  const ticks = tickProbs.map(tp => {
+    const tf = Math.sqrt(tp / maxPct);
+    const ta = (1 - tf) * Math.PI;
+    const r1 = r + sw/2 + 1, r2 = r + sw/2 + 7;
+    const x1 = cx + r1*Math.cos(ta), y1 = cy - r1*Math.sin(ta);
+    const x2 = cx + r2*Math.cos(ta), y2 = cy - r2*Math.sin(ta);
+    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#e2e8f0" stroke-width="1.5" stroke-linecap="round"/>`;
+  }).join('');
+
+  svg.innerHTML = `
+    ${ticks}
+    <path d="${bgArc}" fill="none" stroke="#f1f5f9" stroke-width="${sw}" stroke-linecap="round"/>
+    ${fillArc ? `<path d="${fillArc}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" opacity="0.9"/>` : ''}
+    <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(2)}" y2="${ny.toFixed(2)}" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="5" fill="${color}"/>
+    <text x="${cx}" y="${cy-25}" text-anchor="middle" font-size="22" font-weight="800" fill="${color}" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">${prob.toFixed(1)}%</text>
+    <text x="${lx-1}" y="${ly+15}" text-anchor="middle" font-size="8.5" fill="#94a3b8" font-family="-apple-system,BlinkMacSystemFont,sans-serif">0%</text>
+    <text x="${rx+1}" y="${ry+15}" text-anchor="middle" font-size="8.5" fill="#94a3b8" font-family="-apple-system,BlinkMacSystemFont,sans-serif">${maxPct}%</text>
+  `;
+}
+
+function renderPodium(zRunPred, zSwim, zBike, zRun) {
+  const p = PODIUM[sex];
+  const n = NORMS[sex];
+
+  // ── Composite z (all three disciplines, time-weighted) ──────────────
+  const zComp = compositeZ(zSwim, zBike, zRunPred);
+
+  // ── Probabilities from composite z ──────────────────────────────────
+  // P(podium) = Φ((thr − zComp) / σ); lower z = faster = better
+  const podiumProb = normCDF((p.thr3  - zComp) / p.sigma) * 100;
+  const top10Prob  = normCDF((p.thr10 - zComp) / p.sigma) * 100;
+
+  // ── Gap: how far from podium threshold (in composite z and run seconds) ──
+  const gapZ      = zComp - p.thr3;
+  const gapRunSec = gapZ * n.run[1];  // approximate: 1 composite z ≈ 1 run z ≈ run SD
+  const alreadyPodium = gapZ <= 0;
+
+  // ── Dial gauges (sqrt-scaled; podium max 40%, top10 max 75%) ────────
+  updateGauge('gauge-podium', podiumProb, 40);
+  updateGauge('gauge-top10',  top10Prob,  75);
+
+  // ── Composite z display ──────────────────────────────────────────────
+  const czEl = document.getElementById('composite-z-display');
+  czEl.textContent = (zComp >= 0 ? '+' : '') + zComp.toFixed(2);
+  czEl.style.color = zComp < -1.5 ? '#16a34a' : zComp < -0.5 ? '#0f5e9e' : zComp < 0.5 ? '#64748b' : '#b45309';
+  document.getElementById('composite-z-sub').textContent =
+    `swim ${(compositeZ(zSwim,0,0)*0+zSwim).toFixed(2)}z · bike ${zBike.toFixed(2)}z · run ${zRunPred.toFixed(2)}z`;
+
+  // ── Gap display ──────────────────────────────────────────────────────
+  if (alreadyPodium) {
+    document.getElementById('podium-gap').textContent      = '✓ In range';
+    document.getElementById('podium-gap').style.color      = '#16a34a';
+    document.getElementById('podium-gap-time').textContent = `composite z=${zComp.toFixed(2)} ≤ threshold ${p.thr3.toFixed(2)}`;
+  } else {
+    document.getElementById('podium-gap').textContent      = '+' + gapZ.toFixed(2) + ' z';
+    document.getElementById('podium-gap').style.color      = '#b45309';
+    const m = Math.floor(Math.abs(gapRunSec)/60), s = Math.round(Math.abs(gapRunSec)%60);
+    document.getElementById('podium-gap-time').textContent = `≈ ${m > 0 ? m+'m ' : ''}${s}s overall pace gap`;
+  }
+
+  // ── Per-leg improvement breakdown (to close the composite z gap) ─────
+  // How much improvement in each leg's z-score would close gapZ in composite z?
+  // Δz_comp = w * Δz_leg / SD_comp
+  // → Δz_leg = gapZ * SD_comp / w_leg (but SD_comp ≈ 0.77 and is already normalised into zComp)
+  // Simpler: each leg contributes w_leg * Δz_leg to the raw composite.
+  // To close raw gap = gapZ * sqrt(varRaw): Δz_leg = (gapZ * sqrt(varRaw)) / w_leg
+  const dw = DISCIPLINE_WEIGHTS[sex];
+  const ws = dw.swim, wb = dw.bike, wr = dw.run;
+  const rCorr = 0.35;
+  const sdComp = Math.sqrt(ws*ws + wb*wb + wr*wr + 2*rCorr*(ws*wb + ws*wr + wb*wr));
+  const rawGap = gapZ * sdComp;
+
+  const legs = [
+    { name: '🏊 Swim', w: ws, sd: n.swim[1], label: '1500m' },
+    { name: '🚴 Bike', w: wb, sd: n.bike[1], label: '40km'  },
+    { name: '🏃 Run',  w: wr, sd: n.run[1],  label: '10km'  },
+  ];
+
+  const breakdown = document.getElementById('podium-leg-breakdown');
+  if (alreadyPodium) {
+    breakdown.innerHTML = `<div style="grid-column:1/-1;font-size:12px;color:#16a34a;text-align:center;padding:6px;">✅ Overall composite within podium range for current conditions.</div>`;
+  } else {
+    breakdown.innerHTML = legs.map(leg => {
+      const deltaZ   = rawGap / leg.w;
+      const deltaSec = deltaZ * leg.sd;
+      const m = Math.floor(deltaSec/60), s = Math.round(deltaSec%60);
+      const timeStr  = (m > 0 ? m+'m ' : '') + s + 's';
+      const feasible = deltaZ < 2.5;
+      return `<div class="podium-leg" style="${feasible ? '' : 'opacity:0.45'}">
+        <h5>${leg.name}</h5>
+        <p>Need <strong>${timeStr}</strong> faster<br><span style="color:#94a3b8">(${deltaZ.toFixed(1)} z · ${leg.label})</span></p>
+      </div>`;
+    }).join('');
+  }
+}
+
+function updateWaterDisplay() {
+  const wt = parseFloat(document.getElementById('water-slider').value);
+  document.getElementById('water-display').textContent = wt.toFixed(1) + ' °C';
+  const badge = document.getElementById('wetsuit-badge');
+  if (wt < 20) {
+    badge.textContent = 'Wetsuit ✓';
+    badge.style.cssText = 'margin-left:6px;font-size:10px;padding:2px 7px;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-weight:600;';
+  } else {
+    badge.textContent = 'No wetsuit';
+    badge.style.cssText = 'margin-left:6px;font-size:10px;padding:2px 7px;border-radius:10px;background:#fef9c3;color:#92400e;font-weight:600;';
+  }
+}
+
+function update() {
+  const { zSwim, zBike, zRun } = getZScores();
+  const age   = parseInt(document.getElementById('age').value)       || 28;
+  const wbgt  = parseFloat(document.getElementById('wbgt-slider').value);
+  const wind  = parseFloat(document.getElementById('wind-slider').value);
+  const solar = parseFloat(document.getElementById('solar-slider').value);
+  const waterTemp = parseFloat(document.getElementById('water-slider').value);
+
+  // ── Prediction ───────────────────────────────────────────────────────
+  const zRunPred = predictZRun(zSwim, zBike, zRun, wbgt, 0);
+  const percentile = Math.round((1 - normCDF(zRunPred)) * 100);
+  const heatEffect = (sex === 'men' ? BETA.heat_men : BETA.heat_women) * (wbgt - BETA.wbgt_mean);
+
+  // ── KPIs ─────────────────────────────────────────────────────────────
+  document.getElementById('kpi-zrun').textContent = zRunPred.toFixed(2);
+  document.getElementById('kpi-zrun-interp').textContent =
+    zRunPred < -1 ? 'Top performer' : zRunPred < 0 ? 'Above average' :
+    zRunPred < 1 ? 'Below average' : 'Struggling';
+  document.getElementById('kpi-pos').innerHTML =
+    ordinal(Math.min(99, Math.max(1, percentile))) + '<span style="font-size:16px">ile</span>';
+  document.getElementById('kpi-pos-sub').textContent = percentile < 10 ? 'Podium range' :
+    percentile < 30 ? 'Top third' : percentile < 60 ? 'Mid-field' : 'Back of field';
+  document.getElementById('kpi-heat-effect').textContent =
+    (heatEffect >= 0 ? '+' : '') + heatEffect.toFixed(3);
+
+  // ── WBGT alert ───────────────────────────────────────────────────────
+  const alert = wbgtAlert(wbgt);
+  const alertEl = document.getElementById('wbgt-alert');
+  alertEl.className = 'wbgt-badge ' + alert.cls;
+  alertEl.textContent = alert.icon + ' ' + alert.text;
+
+  // ── Risk score ───────────────────────────────────────────────────────
+  const risk = heatRiskScore(wbgt, wind, solar, age);
+  document.getElementById('risk-score-num').textContent = risk.total;
+  document.getElementById('risk-cat-label').textContent = riskCategory(risk.total);
+  document.getElementById('risk-circle').style.background = riskColour(risk.total);
+
+  const setBar = (id, valId, pts, max) => {
+    document.getElementById(id).style.width = Math.min(100, pts / max * 100) + '%';
+    document.getElementById(valId).textContent = pts;
+  };
+  setBar('bar-wbgt',  'bar-wbgt-val',  risk.wbgt_pts,  60);
+  setBar('bar-solar', 'bar-solar-val', risk.solar_pts, 20);
+  setBar('bar-wind',  'bar-wind-val',  risk.wind_pts,  12);
+  setBar('bar-age',   'bar-age-val',   risk.age_pts,   8);
+
+  const recs = getRecommendations(risk.total, wbgt, sex);
+  document.getElementById('risk-recs').innerHTML = recs.map(r =>
+    `<div class="risk-rec"><span>${r}</span></div>`).join('');
+
+  // ── Podium analysis ──────────────────────────────────────────────────
+  renderPodium(zRunPred, zSwim, zBike, zRun);
+
+  // ── Pacing strategy ──────────────────────────────────────────────────
+  const strat = getPacingStrategy(zSwim, zBike, zRun, zRunPred, wbgt, 0);
+
+  // WBGT risk forecast table (all 4 levels, current row highlighted)
+  const tableRows = strat.forecast.map(lv => {
+    const bg    = lv.isCurrent ? `background:var(--row-bg,#eff6ff);font-weight:600;` : '';
+    const curr  = lv.isCurrent ? ' ◄ now' : '';
+    const zStr  = (lv.zPred >= 0 ? '+' : '') + lv.zPred.toFixed(2);
+    const pctStr = Math.round(lv.pct) + 'th%ile';
+    // Run time vs cool conditions
+    const sign  = lv.deltaSec >= 0 ? '+' : '−';
+    const absSec = Math.abs(Math.round(lv.deltaSec));
+    const deltaStr = absSec > 0
+      ? `${sign}${Math.floor(absSec/60) > 0 ? Math.floor(absSec/60)+'m ' : ''}${absSec%60}s vs cool`
+      : '—';
+    return `<tr style="${bg}">
+      <td style="padding:5px 7px;white-space:nowrap;">
+        <span class="wbgt-badge ${lv.cls}" style="padding:2px 7px;font-size:10px;">${lv.icon} ${lv.label}${curr}</span>
+      </td>
+      <td style="padding:5px 7px;font-size:11px;color:#64748b;">${lv.range}</td>
+      <td style="padding:5px 7px;font-size:11px;text-align:center;font-family:monospace;">${zStr}</td>
+      <td style="padding:5px 7px;font-size:11px;text-align:center;">${pctStr}</td>
+      <td style="padding:5px 7px;font-size:11px;text-align:right;color:#64748b;">${deltaStr}</td>
+      <td style="padding:5px 7px;font-size:11px;text-align:right;font-weight:${lv.isCurrent?'700':'400'};color:${lv.isCurrent?'#0f5e9e':'#94a3b8'};">${lv.adj} pace↓</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('strategy-content').innerHTML = `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:#64748b;margin-bottom:6px;">
+        Run Pace Adjustment by WBGT Risk Level — this athlete's profile
+      </div>
+      <table style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;">
+        <thead>
+          <tr style="background:#f8fafc;">
+            <th style="padding:4px 7px;font-size:10px;font-weight:600;color:#94a3b8;text-align:left;">Level</th>
+            <th style="padding:4px 7px;font-size:10px;font-weight:600;color:#94a3b8;text-align:left;">WBGT</th>
+            <th style="padding:4px 7px;font-size:10px;font-weight:600;color:#94a3b8;text-align:center;">z_run</th>
+            <th style="padding:4px 7px;font-size:10px;font-weight:600;color:#94a3b8;text-align:center;">Finish</th>
+            <th style="padding:4px 7px;font-size:10px;font-weight:600;color:#94a3b8;text-align:right;">Run Δ</th>
+            <th style="padding:4px 7px;font-size:10px;font-weight:600;color:#94a3b8;text-align:right;">Adjust</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+    <div class="strategy-grid" style="margin-top:0;">
+      <div class="strategy-item">
+        <h4>Run start strategy</h4>
+        <p>${strat.start_pace}</p>
+      </div>
+      <div class="strategy-item">
+        <h4>Cooling protocol</h4>
+        <p>${strat.cooling}</p>
+      </div>
+    </div>`;
+
+  // ── Scenario chart ───────────────────────────────────────────────────
+  const wbgts = Array.from({length: 25}, (_, i) => 8 + i);
+  const beta_h = sex === 'men' ? BETA.heat_men : BETA.heat_women;
+  const base = BETA.z_swim * zSwim + BETA.z_bike * zBike + BETA.z_run * zRun;
+  const zRunValues = wbgts.map(w => base + beta_h * (w - BETA.wbgt_mean));
+  const currentPtX = wbgt;
+  const currentPtY = zRunPred;
+
+  // Update shared WBGT position for the background-zone plugins
+  _currentWbgt = wbgt;
+
+  if (!scenarioChart) {
+    const ctx = document.getElementById('scenario-chart').getContext('2d');
+    scenarioChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [
+          {
+            label: 'Predicted z_run',
+            data: wbgts.map((w, i) => ({ x: w, y: zRunValues[i] })),
+            borderColor: '#0f5e9e',
+            borderWidth: 2.5,
+            pointRadius: 0,
+            fill: false,
+            tension: 0.1,
+          },
+          {
+            label: 'Current conditions',
+            data: [{ x: currentPtX, y: currentPtY }],
+            type: 'scatter',
+            backgroundColor: '#ef4444',
+            borderColor: 'white',
+            borderWidth: 2,
+            pointRadius: 8,
+            showLine: false,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        parsing: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ctx.dataset.label === 'Current conditions'
+                ? `WBGT ${currentPtX.toFixed(1)}°C → z_run ${currentPtY.toFixed(2)}`
+                : `z_run: ${ctx.parsed.y.toFixed(3)}`
+            }
+          }
+        },
+        scales: {
+          x: { type: 'linear', title: { display: true, text: 'WBGT (°C)', font: { size: 11 } }, min: 8, max: 32, ticks: { stepSize: 5 } },
+          y: { title: { display: true, text: 'Run z-score', font: { size: 11 } },
+               reverse: true,
+               ticks: { callback: v => v.toFixed(1) } }
+        }
+      },
+      plugins: [pluginBgRun]
+    });
+  } else {
+    scenarioChart.data.datasets[0].data = wbgts.map((w, i) => ({ x: w, y: zRunValues[i] }));
+    scenarioChart.data.datasets[1].data = [{ x: currentPtX, y: currentPtY }];
+    scenarioChart.update('none');
+  }
+
+  // ── Bike pacing scenario chart ────────────────────────────────────────
+  // Shows predicted z_run for 4 bike pacing scenarios across WBGT.
+  // All lines parallel (same heat slope) — vertical spread = bike contribution.
+  const bikeScenarios = [
+    { label: 'Fast (z=−1.0)',     zBike: -1.0, color: '#1d4ed8', width: 2,   dash: [5,3] },
+    { label: 'Current bike',      zBike: zBike, color: '#ef4444', width: 3,   dash: []    },
+    { label: 'Slower (z=+0.5)',   zBike: +0.5, color: '#64748b', width: 1.5, dash: [3,3] },
+    { label: 'Slow (z=+1.0)',     zBike: +1.0, color: '#94a3b8', width: 1.5, dash: [2,3] },
+  ];
+
+  const bikeDatasets = bikeScenarios.map(sc => ({
+    label: sc.label,
+    data: wbgts.map(w => ({
+      x: w,
+      y: BETA.z_swim * zSwim + BETA.z_bike * sc.zBike + BETA.z_run * zRun + beta_h * (w - BETA.wbgt_mean)
+    })),
+    borderColor: sc.color,
+    borderWidth: sc.width,
+    borderDash: sc.dash,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+  }));
+
+  if (!bikeScenarioChart) {
+    const ctx2 = document.getElementById('bike-scenario-chart').getContext('2d');
+    bikeScenarioChart = new Chart(ctx2, {
+      type: 'line',
+      data: { datasets: bikeDatasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        parsing: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: { font: { size: 9 }, boxWidth: 16, padding: 5 }
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.dataset.label}: z_run ${ctx.parsed.y.toFixed(2)}`
+            }
+          }
+        },
+        scales: {
+          x: { type: 'linear', title: { display: true, text: 'WBGT (°C)', font: { size: 10 } },
+               min: 8, max: 32, ticks: { stepSize: 5 } },
+          y: { title: { display: true, text: 'Predicted run z-score', font: { size: 10 } },
+               reverse: true, ticks: { callback: v => v.toFixed(1) } }
+        }
+      },
+      plugins: [pluginBgBike]
+    });
+  } else {
+    bikeScenarioChart.data.datasets = bikeDatasets;
+    bikeScenarioChart.update('none');
+  }
+
+  // ── Swim vs water temperature chart ──────────────────────────────────
+  // Shows athlete's swim z-score as a horizontal band across water temps.
+  // Water temp has no significant independent effect after WBGT adjustment.
+  // Chart is informative for wetsuit eligibility context, not performance prediction.
+  const waterTemps = Array.from({length: 45}, (_, i) => 10 + i * 0.5); // 10–32°C
+  const swimZ = zSwim;
+  const swimUpper = swimZ - 0.5;  // ±0.5z confidence band
+  const swimLower = swimZ + 0.5;
+
+  // Vertical line at current water temp marker
+  const wbgtSuffix = waterTemp < 20 ? ' (Wetsuit ✓)' : ' (No wetsuit)';
+
+  const pluginWetsuitLine = {
+    id: 'wetsuitLine',
+    afterDraw(chart) {
+      const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
+      // Wetsuit threshold at 20°C
+      const xPx = x.getPixelForValue(20);
+      ctx.save();
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(xPx, top); ctx.lineTo(xPx, bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#3b82f6';
+      ctx.font = '9px sans-serif';
+      ctx.fillText('20°C wetsuit', xPx + 3, top + 12);
+      ctx.restore();
+    }
+  };
+
+  const swimDatasets = [
+    // Confidence band (upper)
+    {
+      label: '±0.5z band',
+      data: waterTemps.map(w => ({ x: w, y: swimUpper })),
+      borderColor: 'transparent',
+      backgroundColor: 'rgba(15,94,158,0.10)',
+      fill: '+1',
+      pointRadius: 0,
+      tension: 0,
+    },
+    // Confidence band (lower)
+    {
+      label: '_lower',
+      data: waterTemps.map(w => ({ x: w, y: swimLower })),
+      borderColor: 'transparent',
+      backgroundColor: 'rgba(15,94,158,0.10)',
+      fill: false,
+      pointRadius: 0,
+      tension: 0,
+    },
+    // Flat swim z line
+    {
+      label: 'Swim z (this athlete)',
+      data: waterTemps.map(w => ({ x: w, y: swimZ })),
+      borderColor: '#0f5e9e',
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false,
+      tension: 0,
+    },
+    // Current water temp marker
+    {
+      label: `Current (${waterTemp.toFixed(1)}°C${wbgtSuffix})`,
+      data: [{ x: waterTemp, y: swimZ }],
+      type: 'scatter',
+      backgroundColor: waterTemp < 20 ? '#3b82f6' : '#f97316',
+      borderColor: 'white',
+      borderWidth: 2,
+      pointRadius: 9,
+      showLine: false,
+    },
+  ];
+
+  if (!swimWaterChart) {
+    const ctx3 = document.getElementById('swim-water-chart').getContext('2d');
+    swimWaterChart = new Chart(ctx3, {
+      type: 'line',
+      data: { datasets: swimDatasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        parsing: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              font: { size: 9 }, boxWidth: 14, padding: 6,
+              filter: item => item.text !== '_lower' && item.text !== '±0.5z band'
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                if (ctx.dataset.label.startsWith('Current')) return ctx.dataset.label;
+                if (ctx.dataset.label === 'Swim z (this athlete)') return `z_swim: ${ctx.parsed.y.toFixed(2)} (no water-temp effect)`;
+                return null;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            min: 10, max: 32,
+            title: { display: true, text: 'Water Temperature (°C)', font: { size: 10 } },
+            ticks: { stepSize: 2 }
+          },
+          y: {
+            reverse: true,
+            title: { display: true, text: 'Swim z-score', font: { size: 10 } },
+            ticks: { callback: v => v.toFixed(1) }
+          }
+        }
+      },
+      plugins: [pluginWetsuitLine]
+    });
+  } else {
+    swimWaterChart.data.datasets[0].data = waterTemps.map(w => ({ x: w, y: swimUpper }));
+    swimWaterChart.data.datasets[1].data = waterTemps.map(w => ({ x: w, y: swimLower }));
+    swimWaterChart.data.datasets[2].data = waterTemps.map(w => ({ x: w, y: swimZ }));
+    swimWaterChart.data.datasets[3].data = [{ x: waterTemp, y: swimZ }];
+    swimWaterChart.data.datasets[3].label = `Current (${waterTemp.toFixed(1)}°C${wbgtSuffix})`;
+    swimWaterChart.data.datasets[3].backgroundColor = waterTemp < 20 ? '#3b82f6' : '#f97316';
+    swimWaterChart.update('none');
+  }
+}
+
+// ── Venue lat/lon lookup (auto-populate when preset selected) ──────────────
+const VENUE_COORDS = {
+  'Glasgow / Strathclyde, Scotland (Aug)':    { lat: 55.86, lon: -4.27,  waterBase: 15 },
+  'Rotterdam, Netherlands (Sep)':             { lat: 51.92, lon:  4.48,  waterBase: 18 },
+  'Tartu, Estonia (Jul)':                     { lat: 58.38, lon: 26.72,  waterBase: 19 },
+  'Kraków, Poland (Jun)':                     { lat: 50.06, lon: 19.94,  waterBase: 19 },
+  'Kitzbühel, Austria (Jun)':                 { lat: 47.45, lon: 12.39,  waterBase: 17 },
+  'Geneva, Switzerland (Jul)':               { lat: 46.20, lon:  6.14,  waterBase: 20 },
+  'Lausanne, Switzerland (Aug)':              { lat: 46.52, lon:  6.63,  waterBase: 22 },
+  'Paris, France (Jul)':                      { lat: 48.85, lon:  2.35,  waterBase: 22 },
+  'Pontevedra, Spain (Sep)':                  { lat: 42.43, lon: -8.64,  waterBase: 19 },
+  'Torremolinos, Spain (Oct)':                { lat: 36.62, lon: -4.50,  waterBase: 21 },
+  'Lisbon, Portugal (May)':                   { lat: 38.72, lon: -9.14,  waterBase: 18 },
+  'Baku, Azerbaijan (Jun)':                   { lat: 40.41, lon: 49.87,  waterBase: 24 },
+  'Abu Dhabi, UAE (Nov)':                     { lat: 24.47, lon: 54.37,  waterBase: 26 },
+  'Sharm El Sheikh, Egypt (May)':             { lat: 27.91, lon: 34.33,  waterBase: 25 },
+  'Rabat, Morocco (Apr)':                     { lat: 34.02, lon: -6.84,  waterBase: 18 },
+  'Tokyo, Japan (Jul)':                       { lat: 35.68, lon: 139.69, waterBase: 28 },
+  'Hiroshima / Hatsukaichi, Japan (Apr)':     { lat: 34.40, lon: 132.32, waterBase: 17 },
+  'New Taipei City, Taiwan (Jun)':            { lat: 25.01, lon: 121.47, waterBase: 28 },
+  'Hangzhou, China (Sep)':                    { lat: 30.26, lon: 120.15, waterBase: 27 },
+  'Singapore (Jun)':                          { lat:  1.35, lon: 103.82, waterBase: 29 },
+  'Gold Coast, Australia (Sep)':              { lat: -28.00, lon: 153.43, waterBase: 20 },
+  'Devonport, Tasmania (Feb–Mar)':            { lat: -41.18, lon: 146.36, waterBase: 19 },
+  'Edmonton, Canada (Aug)':                   { lat: 53.55, lon: -113.47, waterBase: 20 },
+  'Toronto, Canada (Jul)':                    { lat: 43.65, lon: -79.38,  waterBase: 22 },
+  'Chicago, USA (Sep)':                       { lat: 41.88, lon: -87.63,  waterBase: 19 },
+  'Monterrey, Mexico (May)':                  { lat: 25.69, lon: -100.32, waterBase: 26 },
+  'Buenos Aires, Argentina (Nov)':            { lat: -34.61, lon: -58.38, waterBase: 20 },
+  'Rio de Janeiro, Brazil (Aug)':             { lat: -22.91, lon: -43.17, waterBase: 24 },
+};
+
+// Store fetched values for the "Apply" button
+let _fetchedConditions = null;
+
+function loadVenue() {
+  const sel = document.getElementById('venue-select');
+  const v = sel.value;
+  if (!v) return;
+  const [wbgt, wind, solar] = v.split(',').map(Number);
+  document.getElementById('wbgt-slider').value = wbgt;
+  document.getElementById('wbgt-display').textContent = wbgt.toFixed(1) + ' °C';
+  document.getElementById('wind-slider').value = wind;
+  document.getElementById('wind-display').textContent = wind.toFixed(1) + ' m/s';
+  document.getElementById('solar-slider').value = solar;
+  document.getElementById('solar-display').textContent = solar + ' W/m²';
+
+  // Auto-populate lat/lon if we know the venue
+  const label = sel.options[sel.selectedIndex].text;
+  const coords = VENUE_COORDS[label];
+  if (coords) {
+    document.getElementById('venue-lat').value = coords.lat;
+    document.getElementById('venue-lon').value = coords.lon;
+    // Estimate typical water temp from venue base
+    document.getElementById('water-slider').value = coords.waterBase;
+    updateWaterDisplay();
+  }
+  update();
+}
+
+async function fetchVenueWeather() {
+  const lat  = parseFloat(document.getElementById('venue-lat').value);
+  const lon  = parseFloat(document.getElementById('venue-lon').value);
+  const date = document.getElementById('venue-date').value;
+  const status = document.getElementById('fetch-status');
+  const result = document.getElementById('fetch-result');
+
+  if (isNaN(lat) || isNaN(lon)) { status.textContent = '⚠️ Enter latitude and longitude first.'; return; }
+  if (!date) { status.textContent = '⚠️ Select a race date.'; return; }
+
+  status.textContent = '⏳ Fetching weather data…';
+  result.style.display = 'none';
+
+  const today = new Date().toISOString().slice(0, 10);
+  const isFuture = date > today;
+
+  // Choose Open-Meteo endpoint: forecast (≤16 days) or historical archive
+  let url;
+  const vars = 'temperature_2m,relative_humidity_2m,wind_speed_10m,shortwave_radiation';
+  if (isFuture) {
+    url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,relative_humidity_2m_mean,wind_speed_10m_max,shortwave_radiation_sum&start_date=${date}&end_date=${date}&timezone=auto`;
+  } else {
+    url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,relative_humidity_2m_mean,wind_speed_10m_max,shortwave_radiation_sum&start_date=${date}&end_date=${date}&timezone=auto`;
+  }
+
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    const d = data.daily;
+
+    const tAir  = d.temperature_2m_max?.[0] ?? d.temperature_2m_mean?.[0] ?? 25;
+    const rh    = d.relative_humidity_2m_mean?.[0] ?? 60;
+    const wind  = d.wind_speed_10m_max?.[0] ?? 2.0;
+    const solar = (d.shortwave_radiation_sum?.[0] ?? 15) / 0.036; // MJ/m²/day → W/m² (noon peak approx)
+    const solarCapped = Math.min(1200, Math.max(0, solar * 0.4)); // race-hour fraction
+
+    // Simplified WBGT: Stull (2011) wet-bulb + globe temp from solar/wind
+    // Tw (wet-bulb) via Stull approximation
+    const Tw = tAir * Math.atan(0.151977 * Math.sqrt(rh + 8.313659))
+             + Math.atan(tAir + rh)
+             - Math.atan(rh - 1.676331)
+             + 0.00391838 * rh ** 1.5 * Math.atan(0.023101 * rh)
+             - 4.686035;
+    // Globe temp: solar heating offset by wind cooling
+    const Tg = tAir + (solarCapped / 800) * 8 - Math.max(0, (wind - 1)) * 1.5;
+    const wbgtEst = parseFloat((0.7 * Tw + 0.2 * Tg + 0.1 * tAir).toFixed(1));
+
+    // Estimate water temp: open-water ≈ 0.75 × T_air + 4°C (empirical)
+    const waterEst = parseFloat((0.75 * tAir + 4).toFixed(1));
+
+    _fetchedConditions = {
+      wbgt: Math.max(8, Math.min(32, wbgtEst)),
+      wind: Math.round(wind * 2) / 2,
+      solar: Math.round(solarCapped / 50) * 50,
+      water: Math.max(10, Math.min(32, waterEst)),
+      tAir
+    };
+
+    document.getElementById('fetch-venue-label').textContent =
+      `📍 ${lat.toFixed(2)}°, ${lon.toFixed(2)}° · ${date} (${isFuture ? 'Forecast' : 'Historical'})`;
+    document.getElementById('fetch-wbgt').textContent  = _fetchedConditions.wbgt.toFixed(1) + ' °C';
+    document.getElementById('fetch-water').textContent = _fetchedConditions.water.toFixed(1) + ' °C';
+    document.getElementById('fetch-air').textContent   = tAir.toFixed(1) + ' °C';
+    document.getElementById('fetch-wind-solar').textContent = wind.toFixed(1) + ' m/s · ' + Math.round(solarCapped) + ' W/m²';
+
+    result.style.display = 'block';
+    status.textContent = '✅ Conditions estimated successfully.';
+  } catch (err) {
+    status.textContent = '❌ Fetch failed: ' + err.message + '. Check coordinates and date.';
+  }
+}
+
+function applyFetchedConditions() {
+  if (!_fetchedConditions) return;
+  const c = _fetchedConditions;
+  document.getElementById('wbgt-slider').value = c.wbgt;
+  document.getElementById('wbgt-display').textContent = c.wbgt.toFixed(1) + ' °C';
+  document.getElementById('wind-slider').value = c.wind;
+  document.getElementById('wind-display').textContent = c.wind.toFixed(1) + ' m/s';
+  document.getElementById('solar-slider').value = c.solar;
+  document.getElementById('solar-display').textContent = c.solar + ' W/m²';
+  document.getElementById('water-slider').value = c.water;
+  updateWaterDisplay();
+  update();
+  document.getElementById('fetch-status').textContent = '✅ Applied to digital twin.';
+}
+
+// Initialise
+updateNormHint();
+setInputMode('time');
+update();
+</script>
+</body>
+</html>
