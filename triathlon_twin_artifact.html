@@ -454,6 +454,16 @@
       <div class="risk-recs" id="risk-recs"></div>
     </div>
 
+    <!-- ── Absolute time impact card ──────────────────────────────────── -->
+    <div class="card" style="margin-top:10px;border-left:4px solid #f97316;">
+      <div class="card-title" style="margin-bottom:8px;">
+        ⏱ Expected Time vs Cool Race
+        <span class="tip" data-tip="Estimated additional time vs the same race in cool conditions (WBGT ≈ 20°C). Below 25°C: linear model (slope × ΔWBGT). At WBGT ≥ 25°C: empirically validated threshold penalty from 39 race-sex observations. Run effect significant in both sexes (p=0.001); bike significant in men (p=0.010). n_hot=4 races only — treat with caution.">i</span>
+      </div>
+      <div id="time-impact-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
+      <div id="time-impact-note" style="font-size:10px;color:#94a3b8;margin-top:8px;line-height:1.4;"></div>
+    </div>
+
     <div class="strategy-card">
       <div class="card-title">📋 Race-Day Strategy Guidance</div>
       <div id="strategy-content"></div>
@@ -479,6 +489,62 @@ const NORMS = {
   men:   { swim: [1110, 85],  bike: [3285, 115], run: [1845, 90]  },
   women: { swim: [1230, 100], bike: [3720, 145], run: [2160, 105] }
 };
+
+// ── Absolute time heat impact (race-level analysis, n=39 race-sex obs) ──
+// Linear slopes (s/°C) from OLS: mean_split ~ WBGT
+// Threshold deltas (s) from hot (≥25°C) vs cool (<25°C) t-test
+// Reference WBGT = 20°C (study population cool-race baseline)
+const HEAT_TIME = {
+  men: {
+    run:   { beta: 9.3,   hot_delta: 505,  sig: true  },   // p=0.001 ***
+    bike:  { beta: 19.7,  hot_delta: 1000, sig: true  },   // p=0.010 **
+    total: { beta: 12.1,  hot_delta: 967,  sig: false },   // p=0.056 †
+  },
+  women: {
+    run:   { beta: 10.9,  hot_delta: 619,  sig: true  },   // p=0.001 ***
+    bike:  { beta: -2.7,  hot_delta: 251,  sig: false },   // p=0.432 ns
+    total: { beta: 7.4,   hot_delta: 865,  sig: false },   // p=0.107 ns
+  }
+};
+const WBGT_COOL_REF   = 20.0;   // reference cool-race WBGT
+const WBGT_HOT_THRESH = 25.0;   // threshold for "hot" classification
+
+function calcTimeImpact(wbgt, sex) {
+  const h = HEAT_TIME[sex];
+  const isHot = wbgt >= WBGT_HOT_THRESH;
+  const dWbgt  = wbgt - WBGT_COOL_REF;
+
+  function est(disc) {
+    // Below reference: no penalty (cool/cold is not slower than 20°C baseline)
+    if (dWbgt <= 0) return 0;
+    // Above hot threshold: use empirical threshold penalty
+    if (isHot) return disc.hot_delta;
+    // Between 20–25°C: linear interpolation
+    return Math.max(0, disc.beta * dWbgt);
+  }
+
+  return {
+    run:   { secs: est(h.run),   sig: h.run.sig   },
+    bike:  { secs: est(h.bike),  sig: h.bike.sig  },
+    total: { secs: est(h.total), sig: h.total.sig },
+    isHot, dWbgt
+  };
+}
+
+function fmtTimeDelta(secs) {
+  if (secs < 5) return '≈0s';
+  const m = Math.floor(secs / 60);
+  const s = Math.round(secs % 60);
+  return '+' + (m > 0 ? `${m}m ${s.toString().padStart(2,'0')}s` : `${s}s`);
+}
+
+function timeImpactColor(secs, sig) {
+  if (!sig) return '#64748b';   // non-significant → grey
+  if (secs < 30)  return '#16a34a';
+  if (secs < 120) return '#ca8a04';
+  if (secs < 360) return '#ea580c';
+  return '#dc2626';
+}
 
 // Podium analysis constants (derived from study field-size distributions)
 // Top-3 z-threshold = Φ⁻¹(3/N) for field size N
@@ -953,6 +1019,33 @@ function update() {
   const recs = getRecommendations(risk.total, wbgt, sex);
   document.getElementById('risk-recs').innerHTML = recs.map(r =>
     `<div class="risk-rec"><span>${r}</span></div>`).join('');
+
+  // ── Absolute time impact ─────────────────────────────────────────────
+  const impact = calcTimeImpact(wbgt, sex);
+  const impactItems = [
+    { label: 'Swim 1500m', delta: 0,                sig: true  },  // no sig swim effect
+    { label: 'Bike 40km',  delta: impact.bike.secs,  sig: impact.bike.sig  },
+    { label: 'Run 10km',   delta: impact.run.secs,   sig: impact.run.sig   },
+  ];
+  document.getElementById('time-impact-grid').innerHTML = impactItems.map(item => {
+    const color = timeImpactColor(item.delta, item.sig);
+    const label = item.delta < 5 ? '≈ 0s' : fmtTimeDelta(item.delta);
+    const sigStar = !item.sig ? ' (ns)' : item.delta > 300 ? ' ***' : item.delta > 120 ? ' **' : item.delta > 30 ? ' *' : '';
+    return `<div style="background:#f8fafc;border-radius:8px;padding:8px 6px;border-top:3px solid ${color};text-align:center;">
+      <div style="font-size:10px;color:#64748b;margin-bottom:4px;">${item.label}</div>
+      <div style="font-size:18px;font-weight:700;color:${color};line-height:1.1;">${label}</div>
+      <div style="font-size:9px;color:#94a3b8;margin-top:2px;">${sigStar}</div>
+    </div>`;
+  }).join('');
+
+  const noteEl = document.getElementById('time-impact-note');
+  if (impact.dWbgt <= 0) {
+    noteEl.textContent = `WBGT ${wbgt.toFixed(1)}°C ≤ ${WBGT_COOL_REF}°C reference — within cool/optimal range. No time penalty estimated.`;
+  } else if (impact.isHot) {
+    noteEl.textContent = `WBGT ≥${WBGT_HOT_THRESH}°C threshold: empirical hot-race penalties applied (n=4 races; men run/bike p<0.01; women run p=0.001). Treat with caution — small hot-race sample.`;
+  } else {
+    noteEl.textContent = `WBGT ${wbgt.toFixed(1)}°C (+${impact.dWbgt.toFixed(1)}°C above ${WBGT_COOL_REF}°C baseline): linear model estimate (β × ΔWBGT). Threshold penalties activate at ${WBGT_HOT_THRESH}°C.`;
+  }
 
   // ── Podium analysis ──────────────────────────────────────────────────
   renderPodium(zRunPred, zSwim, zBike, zRun);

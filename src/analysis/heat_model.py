@@ -186,6 +186,16 @@ def wbgt_threshold_analysis(df: pd.DataFrame) -> pd.DataFrame:
 
 def main():
     TAB.mkdir(parents=True, exist_ok=True)
+
+    # ── 0. Absolute race-time analysis (race-level, not athlete-level) ──────
+    try:
+        from src.analysis.absolute_time_model import main as abs_time_main
+        print("=== Absolute time heat analysis ===")
+        abs_time_main()
+        print()
+    except Exception as exc:
+        print(f"Absolute time analysis skipped: {exc}")
+
     for sex in ["men", "women"]:
         # ── 1. Finisher-only heat model (existing) ──────────────────────────
         df_fin = load(sex)

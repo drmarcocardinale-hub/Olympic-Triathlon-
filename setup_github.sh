@@ -28,6 +28,7 @@ if [ -d "$PIPELINE_DIR/src" ]; then
   mkdir -p src/analysis src/scrape src/twin src/wbgt
   cp "$PIPELINE_DIR/src/analysis/build_dataset.py"       src/analysis/
   cp "$PIPELINE_DIR/src/analysis/heat_model.py"          src/analysis/
+  cp "$PIPELINE_DIR/src/analysis/absolute_time_model.py" src/analysis/
   cp "$PIPELINE_DIR/src/analysis/podium_model.py"        src/analysis/
   cp "$PIPELINE_DIR/src/scrape/build_manifest.py"        src/scrape/
   cp "$PIPELINE_DIR/src/scrape/scrape_results.py"        src/scrape/
