@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Triathlon Digital Twin</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<!-- No external chart library — charts rendered as inline SVG -->
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -216,8 +216,11 @@
       </div>
 
       <div style="margin-top:12px;">
-        <div class="section-label" style="margin-bottom:6px;">IOC/WMA Alert Level</div>
+        <div class="section-label" style="margin-bottom:6px;">IOC/WMA Alert Level
+          <span class="tip" data-tip="IOC Medical Commission / World Masters Athletics WBGT thresholds for endurance events. Low &lt;18°C: no restriction, normal racing. Moderate 18–23°C: caution advised, hydration emphasis, slow athletes may be at risk. High 23–28°C: increased risk for all athletes; medical staff on alert, cooling mandatory, organisers consider delays or cancellation. Extreme &gt;28°C: very high risk; consider postponement or cancellation. Reference: Bouchama et al., Br J Sports Med 2022.">i</span>
+        </div>
         <div id="wbgt-alert" class="wbgt-badge low">🟢 Low risk</div>
+        <div id="wbgt-alert-desc" style="font-size:10px;color:#64748b;margin-top:5px;line-height:1.4;"></div>
       </div>
     </div>
 
@@ -279,8 +282,23 @@
     </div>
 
     <div class="card" style="margin-top:0;">
-      <div class="card-title">📅 Future Race — Fetch Weather <span class="tip" data-tip="Enter the race venue coordinates and date. Fetches forecast (up to 16 days ahead) or historical climate data from Open-Meteo. WBGT is estimated using the Stull (2011) wet-bulb approximation + globe temperature from solar/wind. Water temp estimated from air temperature: T_water ≈ 0.75 × T_air + 4°C.">i</span></div>
+      <div class="card-title">📅 Future Race — Fetch Weather <span class="tip" data-tip="Search by place name or enter coordinates manually, then pick a date. Fetches forecast (up to 16 days ahead) or historical climate from Open-Meteo. WBGT is estimated via Stull (2011) wet-bulb + globe temp from solar/wind. Water temp: T_water ≈ 0.75 × T_air + 4°C.">i</span></div>
 
+      <!-- Place name search -->
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <input type="text" id="place-search" placeholder="Search city or venue…"
+          style="flex:1;padding:6px 8px;border:1.5px solid #cbd5e1;border-radius:7px;font-size:13px;"
+          onkeydown="if(event.key==='Enter')searchPlace()">
+        <button onclick="searchPlace()"
+          style="padding:6px 10px;background:#0f5e9e;color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
+          🔍 Search
+        </button>
+      </div>
+      <!-- Autocomplete results -->
+      <div id="place-results" style="display:none;margin-bottom:8px;border:1.5px solid #cbd5e1;border-radius:7px;overflow:hidden;font-size:12px;"></div>
+      <div id="place-status" style="font-size:11px;color:#64748b;margin-bottom:6px;min-height:14px;"></div>
+
+      <!-- Lat / lon (auto-filled by search, or enter manually) -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
         <div class="field" style="margin-bottom:0;">
           <label style="font-size:11px;">Latitude</label>
@@ -400,13 +418,13 @@
       <div class="chart-card">
         <h3>🏃 Run Performance vs WBGT</h3>
         <div class="chart-container" style="height:230px;">
-          <canvas id="scenario-chart"></canvas>
+          <div id="scenario-chart" style="width:100%;height:100%;"></div>
         </div>
       </div>
       <div class="chart-card">
         <h3>🚴 Bike Pacing Scenarios vs WBGT</h3>
         <div class="chart-container" style="height:230px;">
-          <canvas id="bike-scenario-chart"></canvas>
+          <div id="bike-scenario-chart" style="width:100%;height:100%;"></div>
         </div>
       </div>
     </div>
@@ -414,7 +432,7 @@
     <div class="chart-card" style="margin-top:10px;">
       <h3>🏊 Swim Context vs Water Temperature</h3>
       <div class="chart-container" style="height:220px;">
-        <canvas id="swim-water-chart"></canvas>
+        <div id="swim-water-chart" style="width:100%;height:100%;"></div>
       </div>
       <div style="font-size:10px;color:#94a3b8;margin-top:4px;text-align:center;">
         Dashed line: wetsuit threshold (20°C). Water temp has no significant independent effect on z_swim after WBGT adjustment (partial r &lt; 0.03, p &gt; 0.55). Marker shows current race water temp.
@@ -556,39 +574,129 @@ const PODIUM = {
 
 let sex = 'men';
 let inputMode = 'time';  // 'time' or 'zscore'
-let scenarioChart = null;
-let bikeScenarioChart = null;
-let swimWaterChart = null;
 
-// ── WBGT background zones — module-level so plugins don't need closures ──
+// ── WBGT background zones ────────────────────────────────────────────────────
 const WBGT_ZONES = [
   { lo: 0,  hi: 18, color: 'rgba(220,252,231,0.45)' },
   { lo: 18, hi: 23, color: 'rgba(254,249,195,0.45)' },
   { lo: 23, hi: 28, color: 'rgba(255,237,213,0.45)' },
   { lo: 28, hi: 33, color: 'rgba(254,226,226,0.45)' },
 ];
-let _currentWbgt = 19.3;  // updated in update() before charts render
 
-function _drawBgZones(chart) {
-  const { ctx, chartArea: ca, scales: { x } } = chart;
-  if (!ca) return;
-  WBGT_ZONES.forEach(({ lo, hi, color }) => {
-    const x1 = Math.max(ca.left,  x.getPixelForValue(lo));
-    const x2 = Math.min(ca.right, x.getPixelForValue(hi));
-    if (x2 > x1) { ctx.fillStyle = color; ctx.fillRect(x1, ca.top, x2 - x1, ca.bottom - ca.top); }
+// ── Pure-SVG chart renderer (zero external dependencies) ─────────────────────
+// cfg: { datasets, xMin, xMax, yMin, yMax, xStep, xLabel, yLabel, yFmt,
+//        yReverse, zones, wbgt, vline, legend, legendFilter }
+// dataset keys: label, data:[{x,y}], borderColor, borderWidth, borderDash,
+//               backgroundColor, fill:'+1', type:'scatter', showLine,
+//               pointRadius
+function renderChart(elId, cfg) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const W = el.offsetWidth  || el.parentElement.offsetWidth  || 380;
+  const H = el.offsetHeight || el.parentElement.offsetHeight || 220;
+  const hasLegend = !!cfg.legend;
+  const pad = { top: 10, right: 12, bottom: 36 + (hasLegend ? 26 : 0), left: 44 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top  - pad.bottom;
+
+  let { xMin, xMax, yMin, yMax } = cfg;
+  if (cfg.yReverse) { const tmp = yMin; yMin = yMax; yMax = tmp; }
+
+  const tx = x => pad.left + (x - xMin) / (xMax - xMin) * pw;
+  const ty = y => pad.top  + (y - yMin) / (yMax - yMin) * ph;
+  const cl = `clip-path="url(#c${elId})"`;
+  const ff = n => (+n).toFixed(2);
+
+  let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" style="display:block;width:100%;height:100%">`;
+  s += `<defs><clipPath id="c${elId}"><rect x="${pad.left}" y="${pad.top}" width="${pw}" height="${ph}"/></clipPath></defs>`;
+  s += `<rect x="${pad.left}" y="${pad.top}" width="${pw}" height="${ph}" fill="#fafafa"/>`;
+
+  // Zone bands
+  (cfg.zones || []).forEach(z => {
+    const x1 = Math.max(pad.left, tx(z.lo)), x2 = Math.min(pad.left + pw, tx(z.hi));
+    if (x2 > x1) s += `<rect x="${ff(x1)}" y="${pad.top}" width="${ff(x2-x1)}" height="${ph}" fill="${z.color}"/>`;
   });
-  const xPx = x.getPixelForValue(_currentWbgt);
-  if (xPx >= ca.left && xPx <= ca.right) {
-    ctx.save();
-    ctx.setLineDash([4, 3]);
-    ctx.strokeStyle = 'rgba(239,68,68,0.65)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(xPx, ca.top); ctx.lineTo(xPx, ca.bottom); ctx.stroke();
-    ctx.restore();
+
+  // Y gridlines + labels
+  const ySteps = 5;
+  for (let i = 0; i <= ySteps; i++) {
+    const v = yMin + (yMax - yMin) * i / ySteps;
+    const yp = ff(ty(v));
+    s += `<line x1="${pad.left}" y1="${yp}" x2="${pad.left+pw}" y2="${yp}" stroke="#e8edf2" stroke-width="1"/>`;
+    const lbl = cfg.yFmt ? cfg.yFmt(v) : (+v).toFixed(1);
+    s += `<text x="${pad.left-4}" y="${ff(+yp+3.5)}" text-anchor="end" font-size="9" fill="#94a3b8" font-family="system-ui,sans-serif">${lbl}</text>`;
   }
+
+  // X ticks + gridlines
+  const xStep = cfg.xStep || 5;
+  for (let v = Math.ceil(xMin / xStep) * xStep; v <= xMax + 0.01; v += xStep) {
+    const xp = ff(tx(v));
+    s += `<line x1="${xp}" y1="${pad.top}" x2="${xp}" y2="${pad.top+ph}" stroke="#e8edf2" stroke-width="1"/>`;
+    s += `<text x="${xp}" y="${ff(pad.top+ph+12)}" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="system-ui,sans-serif">${v}</text>`;
+  }
+
+  // Axis lines
+  s += `<line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top+ph}" stroke="#cbd5e1" stroke-width="1.5"/>`;
+  s += `<line x1="${pad.left}" y1="${pad.top+ph}" x2="${pad.left+pw}" y2="${pad.top+ph}" stroke="#cbd5e1" stroke-width="1.5"/>`;
+
+  // Axis titles
+  if (cfg.xLabel) s += `<text x="${ff(pad.left+pw/2)}" y="${ff(pad.top+ph+25)}" text-anchor="middle" font-size="10" fill="#64748b" font-family="system-ui,sans-serif">${cfg.xLabel}</text>`;
+  if (cfg.yLabel) s += `<text transform="rotate(-90,11,${ff(pad.top+ph/2)})" x="11" y="${ff(pad.top+ph/2)}" text-anchor="middle" font-size="10" fill="#64748b" font-family="system-ui,sans-serif">${cfg.yLabel}</text>`;
+
+  // Current WBGT vertical reference line
+  if (cfg.wbgt !== undefined) {
+    const xp = ff(tx(cfg.wbgt));
+    s += `<line x1="${xp}" y1="${pad.top}" x2="${xp}" y2="${pad.top+ph}" stroke="rgba(239,68,68,0.65)" stroke-width="1.5" stroke-dasharray="4,3" ${cl}/>`;
+  }
+
+  // Extra vertical dashed line (e.g. wetsuit threshold)
+  if (cfg.vline) {
+    const xp = ff(tx(cfg.vline.x));
+    s += `<line x1="${xp}" y1="${pad.top}" x2="${xp}" y2="${pad.top+ph}" stroke="${cfg.vline.color||'#3b82f6'}" stroke-width="1.5" stroke-dasharray="5,4" ${cl}/>`;
+    s += `<text x="${ff(+xp+3)}" y="${ff(pad.top+11)}" font-size="9" fill="${cfg.vline.color||'#3b82f6'}" font-family="system-ui,sans-serif">${cfg.vline.label||''}</text>`;
+  }
+
+  // Fill areas (fill:'+1' pairs — confidence bands)
+  cfg.datasets.forEach((ds, i) => {
+    const next = cfg.datasets[i+1];
+    if (ds.fill !== '+1' || !next || !ds.data?.length || !next.data?.length) return;
+    const fwd  = ds.data.map(p => `${ff(tx(p.x))},${ff(ty(p.y))}`).join(' ');
+    const back = [...next.data].reverse().map(p => `${ff(tx(p.x))},${ff(ty(p.y))}`).join(' ');
+    s += `<polygon points="${fwd} ${back}" fill="${ds.backgroundColor||'rgba(15,94,158,0.1)'}" ${cl}/>`;
+  });
+
+  // Lines
+  cfg.datasets.forEach(ds => {
+    if (!ds.data?.length || ds.showLine === false || ds.type === 'scatter') return;
+    const pts = ds.data.map(p => `${ff(tx(p.x))},${ff(ty(p.y))}`).join(' ');
+    const dash = ds.borderDash?.length ? `stroke-dasharray="${ds.borderDash}"` : '';
+    s += `<polyline points="${pts}" fill="none" stroke="${ds.borderColor||'#0f5e9e'}" stroke-width="${ds.borderWidth||2}" ${dash} ${cl}/>`;
+  });
+
+  // Scatter points
+  cfg.datasets.forEach(ds => {
+    if (ds.type !== 'scatter' || !ds.data?.length) return;
+    ds.data.forEach(p => {
+      s += `<circle cx="${ff(tx(p.x))}" cy="${ff(ty(p.y))}" r="${ds.pointRadius||6}" fill="${ds.backgroundColor||'#ef4444'}" stroke="${ds.borderColor||'white'}" stroke-width="${ds.borderWidth||1.5}" ${cl}/>`;
+    });
+  });
+
+  // Legend
+  if (hasLegend) {
+    const visDs = cfg.datasets.filter(d => d.label && (cfg.legendFilter ? cfg.legendFilter(d) : true));
+    let lx = pad.left; const ly = H - 10;
+    visDs.forEach(d => {
+      const col = d.borderColor || d.backgroundColor || '#64748b';
+      const dash = d.borderDash?.length ? `stroke-dasharray="${d.borderDash}"` : '';
+      s += `<line x1="${lx}" y1="${ly}" x2="${lx+16}" y2="${ly}" stroke="${col}" stroke-width="${d.borderWidth||2}" ${dash}/>`;
+      s += `<text x="${lx+20}" y="${ly+3}" font-size="9" fill="#475569" font-family="system-ui,sans-serif">${d.label}</text>`;
+      lx += (d.label.length * 5.2) + 28;
+    });
+  }
+
+  s += '</svg>';
+  el.innerHTML = s;
 }
-const pluginBgRun  = { id: 'bgRun',  beforeDraw: _drawBgZones };
-const pluginBgBike = { id: 'bgBike', beforeDraw: _drawBgZones };
 
 function setSex(s) {
   sex = s;
@@ -1000,6 +1108,13 @@ function update() {
   const alertEl = document.getElementById('wbgt-alert');
   alertEl.className = 'wbgt-badge ' + alert.cls;
   alertEl.textContent = alert.icon + ' ' + alert.text;
+  const alertDescs = {
+    low:  'No restrictions. Normal racing conditions. Standard hydration protocols apply.',
+    mod:  'Caution advised. Slower or older athletes face elevated risk. Increase hydration frequency; medical staff on standby.',
+    high: 'High risk for all athletes. Mandatory cooling stations. Medical team on-course. Organisers should consider delay or modification.',
+    ext:  'Extreme risk. World Triathlon / IOC guidelines recommend postponement or cancellation. Racing in these conditions is strongly discouraged.'
+  };
+  document.getElementById('wbgt-alert-desc').textContent = alertDescs[alert.cls] || '';
 
   // ── Risk score ───────────────────────────────────────────────────────
   const risk = heatRiskScore(wbgt, wind, solar, age);
@@ -1115,73 +1230,39 @@ function update() {
   const currentPtX = wbgt;
   const currentPtY = zRunPred;
 
-  // Update shared WBGT position for the background-zone plugins
-  _currentWbgt = wbgt;
+  // ── Run scenario chart (SVG, no Chart.js) ────────────────────────────
+  const allZRunVals = zRunValues;
+  const zRunMin = Math.min(...allZRunVals) - 0.3;
+  const zRunMax = Math.max(...allZRunVals) + 0.3;
 
-  if (!scenarioChart) {
-    const ctx = document.getElementById('scenario-chart').getContext('2d');
-    scenarioChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        datasets: [
-          {
-            label: 'Predicted z_run',
-            data: wbgts.map((w, i) => ({ x: w, y: zRunValues[i] })),
-            borderColor: '#0f5e9e',
-            borderWidth: 2.5,
-            pointRadius: 0,
-            fill: false,
-            tension: 0.1,
-          },
-          {
-            label: 'Current conditions',
-            data: [{ x: currentPtX, y: currentPtY }],
-            type: 'scatter',
-            backgroundColor: '#ef4444',
-            borderColor: 'white',
-            borderWidth: 2,
-            pointRadius: 8,
-            showLine: false,
-          }
-        ]
+  renderChart('scenario-chart', {
+    xMin: 8, xMax: 32, yMin: zRunMin, yMax: zRunMax,
+    yReverse: true, xStep: 5,
+    xLabel: 'WBGT (°C)', yLabel: 'Run z-score',
+    yFmt: v => v.toFixed(1),
+    zones: WBGT_ZONES, wbgt: wbgt,
+    datasets: [
+      {
+        label: 'Predicted z_run',
+        data: wbgts.map((w, i) => ({ x: w, y: zRunValues[i] })),
+        borderColor: '#0f5e9e', borderWidth: 2.5, showLine: true,
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        parsing: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => ctx.dataset.label === 'Current conditions'
-                ? `WBGT ${currentPtX.toFixed(1)}°C → z_run ${currentPtY.toFixed(2)}`
-                : `z_run: ${ctx.parsed.y.toFixed(3)}`
-            }
-          }
-        },
-        scales: {
-          x: { type: 'linear', title: { display: true, text: 'WBGT (°C)', font: { size: 11 } }, min: 8, max: 32, ticks: { stepSize: 5 } },
-          y: { title: { display: true, text: 'Run z-score', font: { size: 11 } },
-               reverse: true,
-               ticks: { callback: v => v.toFixed(1) } }
-        }
-      },
-      plugins: [pluginBgRun]
-    });
-  } else {
-    scenarioChart.data.datasets[0].data = wbgts.map((w, i) => ({ x: w, y: zRunValues[i] }));
-    scenarioChart.data.datasets[1].data = [{ x: currentPtX, y: currentPtY }];
-    scenarioChart.update('none');
-  }
+      {
+        label: 'Current',
+        data: [{ x: currentPtX, y: currentPtY }],
+        type: 'scatter',
+        backgroundColor: '#ef4444', borderColor: 'white',
+        borderWidth: 2, pointRadius: 8,
+      }
+    ]
+  });
 
   // ── Bike pacing scenario chart ────────────────────────────────────────
-  // Shows predicted z_run for 4 bike pacing scenarios across WBGT.
-  // All lines parallel (same heat slope) — vertical spread = bike contribution.
   const bikeScenarios = [
-    { label: 'Fast (z=−1.0)',     zBike: -1.0, color: '#1d4ed8', width: 2,   dash: [5,3] },
-    { label: 'Current bike',      zBike: zBike, color: '#ef4444', width: 3,   dash: []    },
-    { label: 'Slower (z=+0.5)',   zBike: +0.5, color: '#64748b', width: 1.5, dash: [3,3] },
-    { label: 'Slow (z=+1.0)',     zBike: +1.0, color: '#94a3b8', width: 1.5, dash: [2,3] },
+    { label: 'Fast (z=-1.0)',    zBike: -1.0, color: '#1d4ed8', width: 2,   dash: [5,3] },
+    { label: 'Current bike',     zBike: zBike, color: '#ef4444', width: 3,   dash: []    },
+    { label: 'Slower (z=+0.5)', zBike: +0.5, color: '#64748b', width: 1.5, dash: [3,3] },
+    { label: 'Slow (z=+1.0)',   zBike: +1.0, color: '#94a3b8', width: 1.5, dash: [2,3] },
   ];
 
   const bikeDatasets = bikeScenarios.map(sc => ({
@@ -1190,177 +1271,66 @@ function update() {
       x: w,
       y: BETA.z_swim * zSwim + BETA.z_bike * sc.zBike + BETA.z_run * zRun + beta_h * (w - BETA.wbgt_mean)
     })),
-    borderColor: sc.color,
-    borderWidth: sc.width,
-    borderDash: sc.dash,
-    pointRadius: 0,
-    fill: false,
-    tension: 0.1,
+    borderColor: sc.color, borderWidth: sc.width, borderDash: sc.dash, showLine: true,
   }));
 
-  if (!bikeScenarioChart) {
-    const ctx2 = document.getElementById('bike-scenario-chart').getContext('2d');
-    bikeScenarioChart = new Chart(ctx2, {
-      type: 'line',
-      data: { datasets: bikeDatasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        parsing: false,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'bottom',
-            labels: { font: { size: 9 }, boxWidth: 16, padding: 5 }
-          },
-          tooltip: {
-            callbacks: {
-              label: ctx => `${ctx.dataset.label}: z_run ${ctx.parsed.y.toFixed(2)}`
-            }
-          }
-        },
-        scales: {
-          x: { type: 'linear', title: { display: true, text: 'WBGT (°C)', font: { size: 10 } },
-               min: 8, max: 32, ticks: { stepSize: 5 } },
-          y: { title: { display: true, text: 'Predicted run z-score', font: { size: 10 } },
-               reverse: true, ticks: { callback: v => v.toFixed(1) } }
-        }
-      },
-      plugins: [pluginBgBike]
-    });
-  } else {
-    bikeScenarioChart.data.datasets = bikeDatasets;
-    bikeScenarioChart.update('none');
-  }
+  const allBikeVals = bikeDatasets.flatMap(ds => ds.data.map(p => p.y));
+  const bikePad = (Math.max(...allBikeVals) - Math.min(...allBikeVals)) * 0.15;
+
+  renderChart('bike-scenario-chart', {
+    xMin: 8, xMax: 32,
+    yMin: Math.min(...allBikeVals) - bikePad - 0.15,
+    yMax: Math.max(...allBikeVals) + bikePad + 0.15,
+    yReverse: true, xStep: 5,
+    xLabel: 'WBGT (°C)', yLabel: 'Predicted run z-score',
+    yFmt: v => v.toFixed(1),
+    zones: WBGT_ZONES, wbgt: wbgt,
+    legend: true,
+    datasets: bikeDatasets,
+  });
 
   // ── Swim vs water temperature chart ──────────────────────────────────
-  // Shows athlete's swim z-score as a horizontal band across water temps.
-  // Water temp has no significant independent effect after WBGT adjustment.
-  // Chart is informative for wetsuit eligibility context, not performance prediction.
-  const waterTemps = Array.from({length: 45}, (_, i) => 10 + i * 0.5); // 10–32°C
+  const waterTemps = Array.from({length: 45}, (_, i) => 10 + i * 0.5);
   const swimZ = zSwim;
-  const swimUpper = swimZ - 0.5;  // ±0.5z confidence band
+  const swimUpper = swimZ - 0.5;
   const swimLower = swimZ + 0.5;
+  const wbgtSuffix = waterTemp < 20 ? ' (Wetsuit)' : ' (No wetsuit)';
 
-  // Vertical line at current water temp marker
-  const wbgtSuffix = waterTemp < 20 ? ' (Wetsuit ✓)' : ' (No wetsuit)';
-
-  const pluginWetsuitLine = {
-    id: 'wetsuitLine',
-    afterDraw(chart) {
-      const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
-      // Wetsuit threshold at 20°C
-      const xPx = x.getPixelForValue(20);
-      ctx.save();
-      ctx.strokeStyle = '#3b82f6';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([5, 4]);
-      ctx.beginPath(); ctx.moveTo(xPx, top); ctx.lineTo(xPx, bottom); ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.fillStyle = '#3b82f6';
-      ctx.font = '9px sans-serif';
-      ctx.fillText('20°C wetsuit', xPx + 3, top + 12);
-      ctx.restore();
-    }
-  };
-
-  const swimDatasets = [
-    // Confidence band (upper)
-    {
-      label: '±0.5z band',
-      data: waterTemps.map(w => ({ x: w, y: swimUpper })),
-      borderColor: 'transparent',
-      backgroundColor: 'rgba(15,94,158,0.10)',
-      fill: '+1',
-      pointRadius: 0,
-      tension: 0,
-    },
-    // Confidence band (lower)
-    {
-      label: '_lower',
-      data: waterTemps.map(w => ({ x: w, y: swimLower })),
-      borderColor: 'transparent',
-      backgroundColor: 'rgba(15,94,158,0.10)',
-      fill: false,
-      pointRadius: 0,
-      tension: 0,
-    },
-    // Flat swim z line
-    {
-      label: 'Swim z (this athlete)',
-      data: waterTemps.map(w => ({ x: w, y: swimZ })),
-      borderColor: '#0f5e9e',
-      borderWidth: 2,
-      pointRadius: 0,
-      fill: false,
-      tension: 0,
-    },
-    // Current water temp marker
-    {
-      label: `Current (${waterTemp.toFixed(1)}°C${wbgtSuffix})`,
-      data: [{ x: waterTemp, y: swimZ }],
-      type: 'scatter',
-      backgroundColor: waterTemp < 20 ? '#3b82f6' : '#f97316',
-      borderColor: 'white',
-      borderWidth: 2,
-      pointRadius: 9,
-      showLine: false,
-    },
-  ];
-
-  if (!swimWaterChart) {
-    const ctx3 = document.getElementById('swim-water-chart').getContext('2d');
-    swimWaterChart = new Chart(ctx3, {
-      type: 'line',
-      data: { datasets: swimDatasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        parsing: false,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'bottom',
-            labels: {
-              font: { size: 9 }, boxWidth: 14, padding: 6,
-              filter: item => item.text !== '_lower' && item.text !== '±0.5z band'
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: ctx => {
-                if (ctx.dataset.label.startsWith('Current')) return ctx.dataset.label;
-                if (ctx.dataset.label === 'Swim z (this athlete)') return `z_swim: ${ctx.parsed.y.toFixed(2)} (no water-temp effect)`;
-                return null;
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            type: 'linear',
-            min: 10, max: 32,
-            title: { display: true, text: 'Water Temperature (°C)', font: { size: 10 } },
-            ticks: { stepSize: 2 }
-          },
-          y: {
-            reverse: true,
-            title: { display: true, text: 'Swim z-score', font: { size: 10 } },
-            ticks: { callback: v => v.toFixed(1) }
-          }
-        }
+  renderChart('swim-water-chart', {
+    xMin: 10, xMax: 32, yMin: swimZ - 0.85, yMax: swimZ + 0.85,
+    yReverse: true, xStep: 2,
+    xLabel: 'Water Temperature (°C)', yLabel: 'Swim z-score',
+    yFmt: v => v.toFixed(1),
+    wbgt: undefined,
+    vline: { x: 20, color: '#3b82f6', label: '20°C wetsuit' },
+    legend: true,
+    legendFilter: d => d.label !== '_lower' && d.label !== '±0.5z band',
+    datasets: [
+      {
+        label: '±0.5z band',
+        data: waterTemps.map(w => ({ x: w, y: swimUpper })),
+        borderColor: 'transparent', backgroundColor: 'rgba(15,94,158,0.10)',
+        fill: '+1', showLine: true,
       },
-      plugins: [pluginWetsuitLine]
-    });
-  } else {
-    swimWaterChart.data.datasets[0].data = waterTemps.map(w => ({ x: w, y: swimUpper }));
-    swimWaterChart.data.datasets[1].data = waterTemps.map(w => ({ x: w, y: swimLower }));
-    swimWaterChart.data.datasets[2].data = waterTemps.map(w => ({ x: w, y: swimZ }));
-    swimWaterChart.data.datasets[3].data = [{ x: waterTemp, y: swimZ }];
-    swimWaterChart.data.datasets[3].label = `Current (${waterTemp.toFixed(1)}°C${wbgtSuffix})`;
-    swimWaterChart.data.datasets[3].backgroundColor = waterTemp < 20 ? '#3b82f6' : '#f97316';
-    swimWaterChart.update('none');
-  }
+      {
+        label: '_lower',
+        data: waterTemps.map(w => ({ x: w, y: swimLower })),
+        borderColor: 'transparent', showLine: true,
+      },
+      {
+        label: 'Swim z (this athlete)',
+        data: waterTemps.map(w => ({ x: w, y: swimZ })),
+        borderColor: '#0f5e9e', borderWidth: 2, showLine: true,
+      },
+      {
+        label: `${waterTemp.toFixed(1)}°C${wbgtSuffix}`,
+        data: [{ x: waterTemp, y: swimZ }],
+        type: 'scatter',
+        backgroundColor: waterTemp < 20 ? '#3b82f6' : '#f97316',
+        borderColor: 'white', borderWidth: 2, pointRadius: 9,
+      },
+    ]
+  });
 }
 
 // ── Venue lat/lon lookup (auto-populate when preset selected) ──────────────
@@ -1421,6 +1391,61 @@ function loadVenue() {
     updateWaterDisplay();
   }
   update();
+}
+
+// ── Place name geocoding (Open-Meteo geocoding API — free, no key needed) ─────
+// Store geocoding results at module level — avoids onclick string-escaping issues
+let _geoResults = [];
+
+async function searchPlace() {
+  const q = document.getElementById('place-search').value.trim();
+  const statusEl = document.getElementById('place-status');
+  const resultsEl = document.getElementById('place-results');
+  if (!q) return;
+  statusEl.textContent = '⏳ Searching…';
+  resultsEl.style.display = 'none';
+  resultsEl.innerHTML = '';
+  _geoResults = [];
+  try {
+    const res = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=en&format=json`
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    _geoResults = data.results || [];
+    if (!_geoResults.length) {
+      statusEl.textContent = 'No results found. Try a different spelling or city name.';
+      return;
+    }
+    statusEl.textContent = '';
+    resultsEl.style.display = 'block';
+    // Build result rows using DOM (avoids any quote-escaping issues)
+    _geoResults.forEach((r, i) => {
+      const label = [r.name, r.admin1, r.country].filter(Boolean).join(', ');
+      const row = document.createElement('div');
+      row.style.cssText = `padding:7px 10px;cursor:pointer;border-bottom:1px solid #f1f5f9;background:${i===0?'#eff6ff':'white'};`;
+      row.innerHTML = `<span style="font-weight:600;">${r.name}</span>` +
+        `<span style="color:#64748b;font-size:11px;"> — ${[r.admin1,r.country].filter(Boolean).join(', ')}</span>` +
+        `<span style="color:#94a3b8;font-size:10px;float:right;">${r.latitude.toFixed(2)}°, ${r.longitude.toFixed(2)}°</span>`;
+      row.addEventListener('mouseover', () => row.style.background = '#e0f2fe');
+      row.addEventListener('mouseout',  () => row.style.background = i===0 ? '#eff6ff' : 'white');
+      row.addEventListener('click', () => selectPlace(i));
+      resultsEl.appendChild(row);
+    });
+  } catch (e) {
+    statusEl.textContent = '❌ Search failed: ' + e.message + '. Check your internet connection.';
+  }
+}
+
+function selectPlace(idx) {
+  const r = _geoResults[idx];
+  if (!r) return;
+  const label = [r.name, r.admin1, r.country].filter(Boolean).join(', ');
+  document.getElementById('venue-lat').value = r.latitude.toFixed(4);
+  document.getElementById('venue-lon').value = r.longitude.toFixed(4);
+  document.getElementById('place-search').value = label;
+  document.getElementById('place-results').style.display = 'none';
+  document.getElementById('place-status').textContent = `📍 ${label} · ${r.latitude.toFixed(2)}°, ${r.longitude.toFixed(2)}°`;
 }
 
 async function fetchVenueWeather() {
