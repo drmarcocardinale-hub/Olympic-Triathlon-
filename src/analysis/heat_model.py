@@ -239,7 +239,7 @@ def main():
         # IOC/WMA threshold categories
         thresh = wbgt_threshold_analysis(df_all)
         thresh.to_csv(TAB / f"dnf_by_wbgt_threshold_{sex}.csv", index=False)
-        print(f"\n  DNF rate by IOC/WMA alert level:")
+        print(f"\n  DNF rate by World Triathlon flag level:")
         print(thresh.to_string(index=False))
 
         # Per-venue DNF rate
