@@ -74,10 +74,12 @@
   .strategy-item p { font-size: 12px; color: #475569; line-height: 1.4; }
 
   /* Colours */
-  .low    { background: #dcfce7; color: #166534; }
-  .mod    { background: #fef9c3; color: #854d0e; }
-  .high   { background: #fed7aa; color: #9a3412; }
-  .ext    { background: #fecaca; color: #991b1b; }
+  /* World Triathlon flag colours */
+  .wt-green  { background: #16a34a; color: #ffffff; }
+  .wt-blue   { background: #2563eb; color: #ffffff; }
+  .wt-orange { background: #ea580c; color: #ffffff; }
+  .wt-red    { background: #dc2626; color: #ffffff; }
+  .wt-black  { background: #1e293b; color: #ffffff; }
 
   .track { background: linear-gradient(to right, #22c55e 0%, #eab308 40%, #f97316 70%, #ef4444 100%); }
 
@@ -179,7 +181,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title">🌡️ Race-Day Conditions <span class="tip" data-tip="Environmental conditions on race day. WBGT integrates air temp, humidity, wind, and solar radiation into a single thermal stress index. IOC/WMA action thresholds: &lt;18°C Low · 18–23°C Moderate · 23–28°C High · &gt;28°C Extreme. Water temperature was evaluated for its effect on swim performance (the only discipline in the water) across 59 events: after WBGT adjustment, no independent effect was found (partial r &lt; 0.03, p &gt; 0.55). WBGT is sufficient to capture the full relevant thermal load.">i</span></div>
+      <div class="card-title">🌡️ Race-Day Conditions <span class="tip" data-tip="Environmental conditions on race day. WBGT integrates air temp, humidity, wind, and solar radiation into a single thermal stress index. World Triathlon flag system: Green &lt;25.7°C · Blue 25.7–27.8°C · Orange 27.9–30.0°C · Red 30.1–32.2°C · Black &gt;32.2°C. Water temperature was evaluated for its effect on swim performance across 59 events: after WBGT adjustment, no independent effect was found (partial r &lt;0.03, p &gt;0.55). WBGT is sufficient to capture the full relevant thermal load.">i</span></div>
 
       <div class="slider-wrap">
         <label>WBGT <span class="tip" data-tip="Wet Bulb Globe Temperature. WBGT = 0.7 × natural wet-bulb + 0.2 × globe temp + 0.1 × dry-bulb. The most validated index for exertional heat illness risk in sport. Modelled here using the Liljegren (2008) physical model.">i</span> <span id="wbgt-display">19.3 °C</span></label>
@@ -216,10 +218,10 @@
       </div>
 
       <div style="margin-top:12px;">
-        <div class="section-label" style="margin-bottom:6px;">IOC/WMA Alert Level
-          <span class="tip" data-tip="IOC Medical Commission / World Masters Athletics WBGT thresholds for endurance events. Low &lt;18°C: no restriction, normal racing. Moderate 18–23°C: caution advised, hydration emphasis, slow athletes may be at risk. High 23–28°C: increased risk for all athletes; medical staff on alert, cooling mandatory, organisers consider delays or cancellation. Extreme &gt;28°C: very high risk; consider postponement or cancellation. Reference: Bouchama et al., Br J Sports Med 2022.">i</span>
+        <div class="section-label" style="margin-bottom:6px;">World Triathlon Flag
+          <span class="tip" data-tip="World Triathlon Heat Stress flag system for elite events. 🟢 Green &lt;25.7°C: normal racing, standard protocols. 🔵 Blue 25.7–27.8°C: moderate stress, enhanced hydration, medical on standby. 🟠 Orange 27.9–30.0°C: high stress, mandatory cooling, ice stations, consider modified course. 🔴 Red 30.1–32.2°C: very high stress, race modification or delay strongly advised, individual medical assessment. ⬛ Black &gt;32.2°C: extreme stress, World Triathlon recommends postponement or cancellation.">i</span>
         </div>
-        <div id="wbgt-alert" class="wbgt-badge low">🟢 Low risk</div>
+        <div id="wbgt-alert" class="wbgt-badge wt-green">🟢 Green — Low heat stress</div>
         <div id="wbgt-alert-desc" style="font-size:10px;color:#64748b;margin-top:5px;line-height:1.4;"></div>
       </div>
     </div>
@@ -524,8 +526,8 @@ const HEAT_TIME = {
     total: { beta: 7.4,   hot_delta: 865,  sig: false },   // p=0.107 ns
   }
 };
-const WBGT_COOL_REF   = 20.0;   // reference cool-race WBGT
-const WBGT_HOT_THRESH = 25.0;   // threshold for "hot" classification
+const WBGT_COOL_REF   = 20.0;   // reference cool-race WBGT (study population mean)
+const WBGT_HOT_THRESH = 25.7;   // World Triathlon Green→Blue flag boundary
 
 function calcTimeImpact(wbgt, sex) {
   const h = HEAT_TIME[sex];
@@ -576,11 +578,13 @@ let sex = 'men';
 let inputMode = 'time';  // 'time' or 'zscore'
 
 // ── WBGT background zones ────────────────────────────────────────────────────
+// World Triathlon Heat Stress flag zones
 const WBGT_ZONES = [
-  { lo: 0,  hi: 18, color: 'rgba(220,252,231,0.45)' },
-  { lo: 18, hi: 23, color: 'rgba(254,249,195,0.45)' },
-  { lo: 23, hi: 28, color: 'rgba(255,237,213,0.45)' },
-  { lo: 28, hi: 33, color: 'rgba(254,226,226,0.45)' },
+  { lo: 0,    hi: 25.7, color: 'rgba(134,239,172,0.30)' },  // Green
+  { lo: 25.7, hi: 27.8, color: 'rgba(147,197,253,0.38)' },  // Blue
+  { lo: 27.8, hi: 30.0, color: 'rgba(253,186,116,0.40)' },  // Orange
+  { lo: 30.0, hi: 32.2, color: 'rgba(252,165,165,0.45)' },  // Red
+  { lo: 32.2, hi: 45,   color: 'rgba(51,65,85,0.18)'    },  // Black
 ];
 
 // ── Pure-SVG chart renderer (zero external dependencies) ─────────────────────
@@ -827,11 +831,13 @@ function heatRiskScore(wbgt, wind, solar, age) {
   return { total, wbgt_pts: Math.round(wbgt_pts), solar_pts: Math.round(solar_pts), wind_pts: Math.round(wind_pts), age_pts };
 }
 
+// World Triathlon Heat Stress flag system
 function wbgtAlert(wbgt) {
-  if (wbgt < 18) return { cls: 'low', icon: '🟢', text: 'Low risk (<18°C)' };
-  if (wbgt < 23) return { cls: 'mod', icon: '🟡', text: 'Moderate (18–23°C)' };
-  if (wbgt < 28) return { cls: 'high', icon: '🟠', text: 'High (23–28°C)' };
-  return { cls: 'ext', icon: '🔴', text: 'Extreme (>28°C)' };
+  if (wbgt < 25.7) return { cls: 'wt-green',  icon: '🟢', text: 'Green — Low heat stress (<25.7°C)' };
+  if (wbgt < 27.9) return { cls: 'wt-blue',   icon: '🔵', text: 'Blue — Moderate heat stress (25.7–27.8°C)' };
+  if (wbgt < 30.1) return { cls: 'wt-orange', icon: '🟠', text: 'Orange — High heat stress (27.9–30.0°C)' };
+  if (wbgt < 32.3) return { cls: 'wt-red',    icon: '🔴', text: 'Red — Very high heat stress (30.1–32.2°C)' };
+  return             { cls: 'wt-black',  icon: '⬛', text: 'Black — Extreme heat stress (>32.2°C)' };
 }
 
 function riskColour(score) {
@@ -850,21 +856,24 @@ function riskCategory(score) {
 
 function getRecommendations(score, wbgt, sex) {
   const recs = [];
-  if (wbgt >= 28) recs.push('🚨 Extreme WBGT — ensure medical team is on-course with cooling stations every 2.5 km.');
-  if (wbgt >= 23) recs.push('🧊 Pre-cool athlete with ice vest 20 min before start; ice sponges every km on run.');
-  if (score >= 75) recs.push('⚠️ High individual risk profile — consider withdrawal if WBGT exceeds 30°C.');
+  if (wbgt >= 32.3) recs.push('🚨 Black flag — World Triathlon recommends postponement or cancellation.');
+  else if (wbgt >= 30.1) recs.push('🚨 Red flag — race modification or delay strongly advised; individual medical assessment for all athletes.');
+  else if (wbgt >= 27.9) recs.push('🧊 Orange flag — mandatory cooling stations, ice vests pre-start, ice sponges every km on run.');
+  else if (wbgt >= 25.7) recs.push('🧊 Blue flag — enhanced hydration, medical team on standby, watch for slow/master athletes.');
+  if (score >= 75) recs.push('⚠️ High individual risk profile — consider withdrawal if WBGT reaches Red flag.');
   if (score >= 50) recs.push('📡 Assign dedicated observer on run course; establish withdrawal criteria pre-race.');
-  if (score >= 25 && wbgt >= 18) recs.push('🏃 Reduce target run pace by ' + (wbgt >= 28 ? '8–12%' : wbgt >= 23 ? '4–7%' : '1–3%') + ' vs optimal; allow negative split strategy.');
-  if (score < 25) recs.push('✅ Low risk profile for current conditions — standard race-day protocols apply.');
+  if (score >= 25 && wbgt >= 25.7) recs.push('🏃 Reduce target run pace by ' + (wbgt >= 30.1 ? '8–12%' : wbgt >= 27.9 ? '4–7%' : '1–3%') + ' vs optimal; allow negative split strategy.');
+  if (score < 25 && wbgt < 25.7) recs.push('✅ Green flag — low heat stress. Standard race-day protocols apply.');
   return recs.slice(0, 4);
 }
 
-// IOC/WMA risk levels with typical WBGT representative values for forecast
+// World Triathlon flag levels — representative WBGT midpoints for scenario table
 const RISK_LEVELS = [
-  { label: 'Low',      icon: '🟢', cls: 'low',  range: '<18°C',    mid: 14,   adj: '—',       adjPct: 0,   test: w => w < 18  },
-  { label: 'Moderate', icon: '🟡', cls: 'mod',  range: '18–23°C',  mid: 20.5, adj: '1–3%',    adjPct: 2,   test: w => w >= 18 && w < 23 },
-  { label: 'High',     icon: '🟠', cls: 'high', range: '23–28°C',  mid: 25.5, adj: '4–7%',    adjPct: 5.5, test: w => w >= 23 && w < 28 },
-  { label: 'Extreme',  icon: '🔴', cls: 'ext',  range: '>28°C',    mid: 30,   adj: '8–12%',   adjPct: 10,  test: w => w >= 28 },
+  { label: 'Green',   icon: '🟢', cls: 'wt-green',  range: '<25.7°C',      mid: 20,   adj: '—',     adjPct: 0,   test: w => w < 25.7  },
+  { label: 'Blue',    icon: '🔵', cls: 'wt-blue',   range: '25.7–27.8°C',  mid: 26.7, adj: '1–3%',  adjPct: 2,   test: w => w >= 25.7 && w < 27.9 },
+  { label: 'Orange',  icon: '🟠', cls: 'wt-orange', range: '27.9–30.0°C',  mid: 28.9, adj: '4–7%',  adjPct: 5.5, test: w => w >= 27.9 && w < 30.1 },
+  { label: 'Red',     icon: '🔴', cls: 'wt-red',    range: '30.1–32.2°C',  mid: 31.1, adj: '8–12%', adjPct: 10,  test: w => w >= 30.1 && w < 32.3 },
+  { label: 'Black',   icon: '⬛', cls: 'wt-black',  range: '>32.2°C',      mid: 33.5, adj: '>12%',  adjPct: 14,  test: w => w >= 32.3 },
 ];
 
 function getPacingStrategy(zSwim, zBike, zRun, zRunPred, wbgt, slope) {
@@ -1109,10 +1118,11 @@ function update() {
   alertEl.className = 'wbgt-badge ' + alert.cls;
   alertEl.textContent = alert.icon + ' ' + alert.text;
   const alertDescs = {
-    low:  'No restrictions. Normal racing conditions. Standard hydration protocols apply.',
-    mod:  'Caution advised. Slower or older athletes face elevated risk. Increase hydration frequency; medical staff on standby.',
-    high: 'High risk for all athletes. Mandatory cooling stations. Medical team on-course. Organisers should consider delay or modification.',
-    ext:  'Extreme risk. World Triathlon / IOC guidelines recommend postponement or cancellation. Racing in these conditions is strongly discouraged.'
+    'wt-green':  'Normal racing conditions. Standard hydration and medical protocols apply.',
+    'wt-blue':   'Moderate heat stress. Enhanced hydration frequency; medical team on standby; watch for slower and masters athletes.',
+    'wt-orange': 'High heat stress. Mandatory cooling stations; ice vests pre-start; ice sponges every km on run; medical team on-course.',
+    'wt-red':    'Very high heat stress. Race modification or delay strongly advised. Individual medical assessment for all athletes before start.',
+    'wt-black':  'Extreme heat stress. World Triathlon recommends postponement or cancellation. Racing in these conditions is strongly discouraged.'
   };
   document.getElementById('wbgt-alert-desc').textContent = alertDescs[alert.cls] || '';
 
@@ -1155,11 +1165,11 @@ function update() {
 
   const noteEl = document.getElementById('time-impact-note');
   if (impact.dWbgt <= 0) {
-    noteEl.textContent = `WBGT ${wbgt.toFixed(1)}°C ≤ ${WBGT_COOL_REF}°C reference — within cool/optimal range. No time penalty estimated.`;
+    noteEl.textContent = `WBGT ${wbgt.toFixed(1)}°C ≤ ${WBGT_COOL_REF}°C reference — Green flag range. No time penalty estimated.`;
   } else if (impact.isHot) {
-    noteEl.textContent = `WBGT ≥${WBGT_HOT_THRESH}°C threshold: empirical hot-race penalties applied (n=4 races; men run/bike p<0.01; women run p=0.001). Treat with caution — small hot-race sample.`;
+    noteEl.textContent = `WBGT ≥${WBGT_HOT_THRESH}°C (Blue flag or above): empirical hot-race penalties applied (n=4 races; men run/bike p<0.01; women run p=0.001). Treat with caution — small hot-race sample.`;
   } else {
-    noteEl.textContent = `WBGT ${wbgt.toFixed(1)}°C (+${impact.dWbgt.toFixed(1)}°C above ${WBGT_COOL_REF}°C baseline): linear model estimate (β × ΔWBGT). Threshold penalties activate at ${WBGT_HOT_THRESH}°C.`;
+    noteEl.textContent = `WBGT ${wbgt.toFixed(1)}°C (+${impact.dWbgt.toFixed(1)}°C above ${WBGT_COOL_REF}°C baseline): linear model estimate (β × ΔWBGT). Blue-flag threshold penalties activate at ${WBGT_HOT_THRESH}°C.`;
   }
 
   // ── Podium analysis ──────────────────────────────────────────────────

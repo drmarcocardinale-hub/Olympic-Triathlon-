@@ -167,11 +167,13 @@ def dnf_logistic_model(df: pd.DataFrame):
 
 def wbgt_threshold_analysis(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Compute DNF rate at IOC/WMA WBGT alert levels:
-      <18°C Low · 18-23°C Moderate · 23-28°C High · >28°C Extreme
+    Compute DNF rate at World Triathlon Heat Stress flag levels:
+      🟢 Green <25.7°C · 🔵 Blue 25.7–27.8°C · 🟠 Orange 27.9–30.0°C ·
+      🔴 Red 30.1–32.2°C · ⬛ Black >32.2°C
     """
-    bins   = [0, 18, 23, 28, 50]
-    labels = ["Low (<18)", "Moderate (18–23)", "High (23–28)", "Extreme (>28)"]
+    bins   = [0, 25.7, 27.9, 30.1, 32.3, 60]
+    labels = ["Green (<25.7)", "Blue (25.7–27.8)", "Orange (27.9–30.0)",
+              "Red (30.1–32.2)", "Black (>32.2)"]
     df = df.copy()
     df["threshold_cat"] = pd.cut(df["race_day_wbgt"], bins=bins, labels=labels)
     g = df.groupby("threshold_cat", observed=True).agg(

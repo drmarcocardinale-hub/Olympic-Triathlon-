@@ -2,20 +2,28 @@
 Absolute race-time analysis: effect of environmental heat (WBGT) on
 mean split times at the race level.
 
+Environmental conditions are classified using World Triathlon Heat Stress
+flag thresholds (World Triathlon Technical Regulations):
+  🟢 Green  < 25.7°C WBGT — Low heat stress
+  🔵 Blue   25.7–27.8°C   — Moderate heat stress
+  🟠 Orange 27.9–30.0°C   — High heat stress
+  🔴 Red    30.1–32.2°C   — Very high heat stress
+  ⬛ Black  > 32.2°C      — Extreme heat stress
+
 Analysis approach:
   1. Aggregate athlete-level data to race-sex means (one row per race × sex).
   2. Fit linear OLS: mean_time ~ WBGT — tests for a continuous linear relationship.
-  3. Fit threshold model: mean_time ~ WBGT + I(WBGT≥25) — captures the
-     non-linear performance collapse observed above 25°C.
-  4. Category comparison: t-test between hot (WBGT≥25°C) and cool (<25°C) races.
-  5. Save coefficient tables and category means.
+  3. Fit threshold model: mean_time ~ WBGT + I(WBGT ≥ 25.7) — captures the
+     non-linear performance collapse at the Green→Blue flag boundary.
+  4. Category comparison: t-test between Blue/above (WBGT ≥ 25.7°C)
+     and Green (< 25.7°C) races.
+  5. Category means by World Triathlon flag level.
+  6. Save coefficient tables and category means.
 
-Key findings (39 race-sex observations, WTS/Olympic 2015-2023):
-  - Linear OLS: non-significant for all splits (r ≈ 0.1–0.2, p > 0.05).
-  - Threshold model: hot races (WBGT≥25°C) substantially slower.
-    Men:   run +505s (p=0.001), bike +1000s (p=0.010), total +967s (p=0.056)
-    Women: run +619s (p=0.001), bike +251s (ns), total +865s (ns)
-  - Relationship is non-linear; performance is optimal at 20-25°C.
+Key findings will update after re-running with new threshold. Previous run
+(HOT_THRESHOLD = 25.0°C):
+  Men:   run +505s (p=0.001), bike +1000s (p=0.010) in hot races
+  Women: run +619s (p=0.001) in hot races
 """
 from __future__ import annotations
 import pathlib
@@ -27,9 +35,9 @@ ROOT   = pathlib.Path(__file__).resolve().parents[2]
 MASTER = ROOT / "data" / "processed" / "master.parquet"
 TAB    = ROOT / "outputs" / "tables"
 
-# WBGT threshold for "hot" classification
-HOT_THRESHOLD = 25.0
-# Reference WBGT for "cool" baseline (study population mean)
+# World Triathlon Green→Blue flag boundary (hot/cool split for threshold model)
+HOT_THRESHOLD = 25.7
+# Reference WBGT for cool-race baseline (study population mean)
 COOL_REFERENCE = 20.0
 
 OUTCOMES = [
@@ -39,11 +47,13 @@ OUTCOMES = [
     ("total_mean", "Total race time"),
 ]
 
+# World Triathlon flag categories
 WBGT_CATS = {
-    "Cold (<15°C)":   (0,  15),
-    "Cool (15–20°C)": (15, 20),
-    "Warm (20–25°C)": (20, 25),
-    "Hot (>25°C)":    (25, 50),
+    "Green (<25.7°C)":      (0,    25.7),
+    "Blue (25.7–27.8°C)":   (25.7, 27.9),
+    "Orange (27.9–30.0°C)": (27.9, 30.1),
+    "Red (30.1–32.2°C)":    (30.1, 32.3),
+    "Black (>32.2°C)":      (32.3, 60),
 }
 
 
@@ -157,7 +167,8 @@ def threshold_model(race: pd.DataFrame) -> pd.DataFrame:
 
 def hot_cool_comparison(race: pd.DataFrame) -> pd.DataFrame:
     """
-    Independent-samples t-test: hot (WBGT≥25°C) vs cool (<25°C) mean times.
+    Independent-samples t-test: Blue flag or above (WBGT ≥ 25.7°C) vs
+    Green flag (<25.7°C) mean times. Uses World Triathlon threshold.
     """
     rows = []
     for sex in ["men", "women"]:
@@ -183,8 +194,8 @@ def hot_cool_comparison(race: pd.DataFrame) -> pd.DataFrame:
 
 
 def category_means(race: pd.DataFrame) -> pd.DataFrame:
-    """Mean split times by WBGT category (cold / cool / warm / hot)."""
-    bins   = [v[0] for v in WBGT_CATS.values()] + [50]
+    """Mean split times by World Triathlon flag category."""
+    bins   = [v[0] for v in WBGT_CATS.values()] + [60]
     labels = list(WBGT_CATS.keys())
     race = race.copy()
     race["wbgt_cat"] = pd.cut(race["wbgt"], bins=bins, labels=labels)
