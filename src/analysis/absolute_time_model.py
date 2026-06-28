@@ -67,13 +67,14 @@ def load_race_level() -> pd.DataFrame:
     if "race_day_wbgt" not in df.columns and "wbgt_mean" in df.columns:
         df = df.rename(columns={"wbgt_mean": "race_day_wbgt"})
 
-    # Exclude DNFs and implausible times (relays / sprint format)
+    # Exclude DNFs and implausible times (relays / sprint format / data errors)
+    # Upper bounds: elite Olympic-distance times rarely exceed 180 min total
     df = df[
         (df["dnf_flag"] == 0) &
-        (df["total_s"] > 3600) &
-        (df["bike_s"]  > 1800) &
-        (df["run_s"]   > 1200) &
-        (df["swim_s"]  > 600)  &
+        (df["total_s"] > 3600)  & (df["total_s"] < 10800) &   # 60–180 min
+        (df["bike_s"]  > 1800)  & (df["bike_s"]  < 6000)  &   # 30–100 min
+        (df["run_s"]   > 1200)  & (df["run_s"]   < 3600)  &   # 20–60 min
+        (df["swim_s"]  > 600)   & (df["swim_s"]  < 2400)  &   # 10–40 min
         (df["race_day_wbgt"].notna())
     ].copy()
 
