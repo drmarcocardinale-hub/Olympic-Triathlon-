@@ -42,36 +42,36 @@
   .wbgt-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 
   /* Right panel */
-  .right { overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .right { overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
 
-  .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .kpi { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center; }
-  .kpi-value { font-size: 28px; font-weight: 800; color: #0f5e9e; line-height: 1; }
-  .kpi-label { font-size: 11px; color: #64748b; margin-top: 4px; font-weight: 500; }
-  .kpi-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+  .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .kpi { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 10px; text-align: center; }
+  .kpi-value { font-size: 22px; font-weight: 800; color: #0f5e9e; line-height: 1; }
+  .kpi-label { font-size: 10px; color: #64748b; margin-top: 3px; font-weight: 500; }
+  .kpi-sub { font-size: 10px; color: #94a3b8; margin-top: 1px; }
 
-  .chart-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
-  .chart-card h3 { font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 12px; }
-  .chart-container { height: 200px; position: relative; }
+  .chart-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; }
+  .chart-card h3 { font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 8px; }
+  .chart-container { height: 140px; position: relative; }
 
-  .risk-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
-  .risk-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .risk-title { font-size: 13px; font-weight: 600; color: #334155; }
-  .risk-score-circle { width: 64px; height: 64px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; color: white; }
-  .risk-score-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-  .risk-bars { display: flex; flex-direction: column; gap: 6px; }
+  .risk-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; }
+  .risk-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .risk-title { font-size: 12px; font-weight: 600; color: #334155; }
+  .risk-score-circle { width: 48px; height: 48px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; color: white; }
+  .risk-score-label { font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .risk-bars { display: flex; flex-direction: column; gap: 4px; }
   .risk-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
   .risk-row-label { width: 100px; color: #64748b; flex-shrink: 0; }
   .risk-bar-bg { flex: 1; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
   .risk-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
-  .risk-recs { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
-  .risk-rec { font-size: 12px; color: #475569; padding: 4px 0; display: flex; gap: 6px; align-items: flex-start; }
+  .risk-recs { margin-top: 8px; padding-top: 8px; border-top: 1px solid #f1f5f9; }
+  .risk-rec { font-size: 11px; color: #475569; padding: 3px 0; display: flex; gap: 5px; align-items: flex-start; }
 
-  .strategy-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
-  .strategy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-  .strategy-item { background: #f8fafc; border-radius: 8px; padding: 10px; }
-  .strategy-item h4 { font-size: 11px; font-weight: 700; color: #0f5e9e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .strategy-item p { font-size: 12px; color: #475569; line-height: 1.4; }
+  .strategy-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; }
+  .strategy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .strategy-item { background: #f8fafc; border-radius: 8px; padding: 8px; }
+  .strategy-item h4 { font-size: 10px; font-weight: 700; color: #0f5e9e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .strategy-item p { font-size: 11px; color: #475569; line-height: 1.35; }
 
   /* Colours */
   /* World Triathlon flag colours */
@@ -91,16 +91,16 @@
   .tip:hover::after { opacity:1; }
 
   /* ── Podium card ─────────────────────────────────────────────────────── */
-  .podium-card { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:16px; }
-  .podium-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:12px; }
-  .podium-kpi { background:#f8fafc; border-radius:8px; padding:10px; text-align:center; }
-  .podium-kpi-value { font-size:22px; font-weight:800; color:#0f5e9e; line-height:1; }
-  .podium-kpi-label { font-size:11px; color:#64748b; margin-top:3px; font-weight:500; }
-  .podium-kpi-sub { font-size:10px; color:#94a3b8; margin-top:1px; }
-  .podium-improve { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
-  .podium-leg { background:#f8fafc; border-radius:8px; padding:8px; text-align:center; }
-  .podium-leg h5 { font-size:10px; font-weight:700; color:#0f5e9e; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:3px; }
-  .podium-leg p { font-size:11px; color:#475569; line-height:1.35; }
+  .podium-card { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; }
+  .podium-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:8px; }
+  .podium-kpi { background:#f8fafc; border-radius:8px; padding:7px; text-align:center; }
+  .podium-kpi-value { font-size:18px; font-weight:800; color:#0f5e9e; line-height:1; }
+  .podium-kpi-label { font-size:10px; color:#64748b; margin-top:2px; font-weight:500; }
+  .podium-kpi-sub { font-size:9px; color:#94a3b8; margin-top:1px; }
+  .podium-improve { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:6px; }
+  .podium-leg { background:#f8fafc; border-radius:8px; padding:6px; text-align:center; }
+  .podium-leg h5 { font-size:9px; font-weight:700; color:#0f5e9e; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:2px; }
+  .podium-leg p { font-size:10px; color:#475569; line-height:1.3; }
 </style>
 </head>
 <body>
@@ -181,11 +181,11 @@
     </div>
 
     <div class="card">
-      <div class="card-title">🌡️ Race-Day Conditions <span class="tip" data-tip="Environmental conditions on race day. WBGT integrates air temp, humidity, wind, and solar radiation into a single thermal stress index. World Triathlon flag system: Green &lt;25.7°C · Blue 25.7–27.8°C · Orange 27.9–30.0°C · Red 30.1–32.2°C · Black &gt;32.2°C. Water temperature was evaluated for its effect on swim performance across 59 events: after WBGT adjustment, no independent effect was found (partial r &lt;0.03, p &gt;0.55). WBGT is sufficient to capture the full relevant thermal load.">i</span></div>
+      <div class="card-title">🌡️ Race-Day Conditions <span class="tip" data-tip="Environmental conditions on race day. WBGT integrates air temp, humidity, wind, and solar radiation into a single thermal stress index. World Triathlon flag system: Green &lt;25.7°C · Blue 25.7–27.8°C · Orange 27.9–30.0°C · Red 30.1–32.2°C · Black &gt;32.2°C. Water temperature was evaluated for its effect on swim performance across 59 events: after WBGT adjustment, no independent effect was found (partial r &lt;0.07, p &gt;0.07). WBGT is sufficient to capture the full relevant thermal load.">i</span></div>
 
       <div class="slider-wrap">
-        <label>WBGT <span class="tip" data-tip="Wet Bulb Globe Temperature. WBGT = 0.7 × natural wet-bulb + 0.2 × globe temp + 0.1 × dry-bulb. The most validated index for exertional heat illness risk in sport. Modelled here using the Liljegren (2008) physical model.">i</span> <span id="wbgt-display">19.3 °C</span></label>
-        <input type="range" id="wbgt-slider" min="8" max="32" step="0.5" value="19.3"
+        <label>WBGT <span class="tip" data-tip="Wet Bulb Globe Temperature. WBGT = 0.7 × natural wet-bulb + 0.2 × globe temp + 0.1 × dry-bulb. The most validated index for exertional heat illness risk in sport. Modelled here using the Liljegren (2008) physical model.">i</span> <span id="wbgt-display">18.9 °C</span></label>
+        <input type="range" id="wbgt-slider" min="8" max="32" step="0.5" value="18.9"
           style="background: linear-gradient(to right, #22c55e 0%, #eab308 45%, #f97316 68%, #ef4444 100%)"
           oninput="document.getElementById('wbgt-display').textContent=parseFloat(this.value).toFixed(1)+' °C'; update()">
         <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:2px;">
@@ -231,7 +231,7 @@
       <div class="field">
         <select id="venue-select" onchange="loadVenue()">
           <option value="">— Select a venue —</option>
-          <option value="19.3,2,600">── Population mean (19.3°C) ──</option>
+          <option value="18.9,2,600">── Population mean (18.9°C) ──</option>
           <optgroup label="🇪🇺 Europe">
             <option value="13.8,4.5,360">Glasgow / Strathclyde, Scotland (Aug)</option>
             <option value="16.2,4.0,400">Rotterdam, Netherlands (Sep)</option>
@@ -359,140 +359,151 @@
   <!-- ════ RIGHT PANEL ════ -->
   <div class="right">
 
+    <!-- KPI row — full width -->
     <div class="kpi-row">
       <div class="kpi">
         <div class="kpi-value" id="kpi-zrun">0.00</div>
-        <div class="kpi-label">Predicted Run z-score <span class="tip" data-tip="Composite run z-score predicted from historical performance and race-day WBGT. Formula: 0.55×z_run + 0.25×z_bike + 0.20×z_swim + β_heat×(WBGT−19.3). Negative = faster than field average.">i</span></div>
+        <div class="kpi-label">Predicted Run z-score <span class="tip" data-tip="Composite run z-score predicted from historical performance and race-day WBGT. Formula: 0.55×z_run + 0.25×z_bike + 0.20×z_swim + β_heat×(WBGT−18.9). Negative = faster than field average.">i</span></div>
         <div class="kpi-sub" id="kpi-zrun-interp">At population mean</div>
       </div>
       <div class="kpi">
-        <div class="kpi-value" id="kpi-pos">50<span style="font-size:16px">th</span></div>
+        <div class="kpi-value" id="kpi-pos">50<span style="font-size:14px">th</span></div>
         <div class="kpi-label">Est. Finish Percentile <span class="tip" data-tip="Estimated finish position as a percentile of the race field, derived from the predicted run z-score assuming a normal distribution of run times. Lower percentile = better finish (1st percentile = fastest).">i</span></div>
         <div class="kpi-sub" id="kpi-pos-sub">of race field</div>
       </div>
       <div class="kpi">
-        <div class="kpi-value" id="kpi-heat-effect" style="font-size:20px;">—</div>
-        <div class="kpi-label">WBGT Effect on Run <span class="tip" data-tip="The heat penalty in z-score units at the current WBGT vs. the study population mean (19.3°C). Men: β=−0.006/°C (p=0.002). Women: β=0 (NS). A value of −0.06 means the athlete is predicted to run 0.06z slower than at 19.3°C.">i</span></div>
-        <div class="kpi-sub">vs population mean (19.3°C)</div>
+        <div class="kpi-value" id="kpi-heat-effect" style="font-size:18px;">—</div>
+        <div class="kpi-label">WBGT Effect on Run <span class="tip" data-tip="The heat penalty in z-score units at the current WBGT vs. the study population mean (18.9°C). Men: β=−0.006/°C (p=0.002). Women: β=0 (NS). A value of −0.06 means the athlete is predicted to run 0.06z slower than at 18.9°C.">i</span></div>
+        <div class="kpi-sub">vs population mean (18.9°C)</div>
       </div>
     </div>
 
-    <div class="podium-card">
-      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;">
-        <span style="font-size:13px;font-weight:600;color:#334155;">🏆 Podium Analysis</span>
-        <span class="tip" data-tip="Probabilities are based on an OLS-weighted composite z-score across all three disciplines (swim ~11%, bike ~46%, run ~43% men / swim ~10%, bike ~48%, run ~42% women), including the WBGT heat penalty on run. Weights derived from OLS regression of z_total on discipline z-scores. Thresholds: men ≈55 starters (top-3 ≈ z=−1.60), women ≈45 starters (top-3 ≈ z=−1.50). Model residual σ=0.75.">i</span>
-        <span style="font-size:11px;color:#94a3b8;margin-left:auto;">n=3,449 athlete-races</span>
-      </div>
+    <!-- ── Row 1: Podium (left) | Risk + Time Impact (right) ─── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start;">
 
-      <!-- Dual dial gauges -->
-      <div style="display:flex;gap:4px;align-items:flex-end;">
-        <div style="flex:1;text-align:center;">
-          <svg id="gauge-podium" viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;"></svg>
-          <div style="font-size:11px;font-weight:600;color:#334155;margin-top:-2px;">Podium (Top 3)</div>
-          <div style="font-size:10px;color:#94a3b8;">vs ≈55 starters (men) / 45 (women)</div>
+      <!-- Podium card -->
+      <div class="podium-card">
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px;">
+          <span style="font-size:12px;font-weight:600;color:#334155;">🏆 Podium Analysis</span>
+          <span class="tip" data-tip="Probabilities are based on an OLS-weighted composite z-score across all three disciplines (swim ~11%, bike ~46%, run ~43% men / swim ~10%, bike ~48%, run ~42% women), including the WBGT heat penalty on run. Weights derived from OLS regression of z_total on discipline z-scores. Thresholds: men ≈55 starters (top-3 ≈ z=−1.60), women ≈45 starters (top-3 ≈ z=−1.50). Model residual σ=0.75.">i</span>
+          <span style="font-size:10px;color:#94a3b8;margin-left:auto;">n=7,415 athlete-races</span>
         </div>
-        <div style="flex:1;text-align:center;">
-          <svg id="gauge-top10" viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;"></svg>
-          <div style="font-size:11px;font-weight:600;color:#334155;margin-top:-2px;">Top 10</div>
-          <div style="font-size:10px;color:#94a3b8;">Points / national selection zone</div>
+        <!-- Dual dial gauges (compact) -->
+        <div style="display:flex;gap:4px;align-items:flex-end;">
+          <div style="flex:1;text-align:center;">
+            <svg id="gauge-podium" viewBox="0 0 200 96" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;max-height:78px;"></svg>
+            <div style="font-size:10px;font-weight:600;color:#334155;margin-top:-2px;">Podium (Top 3)</div>
+            <div style="font-size:9px;color:#94a3b8;">vs ≈55 (men) / 45 (women)</div>
+          </div>
+          <div style="flex:1;text-align:center;">
+            <svg id="gauge-top10" viewBox="0 0 200 96" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;max-height:78px;"></svg>
+            <div style="font-size:10px;font-weight:600;color:#334155;margin-top:-2px;">Top 10</div>
+            <div style="font-size:9px;color:#94a3b8;">Points / selection zone</div>
+          </div>
         </div>
-      </div>
+        <!-- Gap info row -->
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <div style="flex:1;background:#f8fafc;border-radius:7px;padding:7px;text-align:center;">
+            <div style="font-size:15px;font-weight:800;" id="podium-gap">—</div>
+            <div style="font-size:10px;color:#64748b;">Gap to podium pace</div>
+            <div style="font-size:9px;color:#94a3b8;" id="podium-gap-time">—</div>
+          </div>
+          <div style="flex:1;background:#f8fafc;border-radius:7px;padding:7px;text-align:center;">
+            <div style="font-size:15px;font-weight:800;color:#0f5e9e;" id="composite-z-display">0.00</div>
+            <div style="font-size:10px;color:#64748b;">Overall composite z</div>
+            <div style="font-size:9px;color:#94a3b8;" id="composite-z-sub">all disciplines · OLS-weighted</div>
+          </div>
+        </div>
+        <!-- Per-leg improvement breakdown -->
+        <div id="podium-leg-breakdown" class="podium-improve" style="margin-top:6px;"></div>
+      </div><!-- /podium-card -->
 
-      <!-- Gap info row -->
-      <div style="display:flex;gap:10px;margin-top:10px;">
-        <div style="flex:1;background:#f8fafc;border-radius:8px;padding:9px;text-align:center;">
-          <div style="font-size:17px;font-weight:800;" id="podium-gap">—</div>
-          <div style="font-size:11px;color:#64748b;">Gap to podium pace</div>
-          <div style="font-size:10px;color:#94a3b8;" id="podium-gap-time">—</div>
-        </div>
-        <div style="flex:1;background:#f8fafc;border-radius:8px;padding:9px;text-align:center;">
-          <div style="font-size:17px;font-weight:800;color:#0f5e9e;" id="composite-z-display">0.00</div>
-          <div style="font-size:11px;color:#64748b;">Overall composite z</div>
-          <div style="font-size:10px;color:#94a3b8;" id="composite-z-sub">all disciplines · OLS-weighted</div>
-        </div>
-      </div>
+      <!-- Right column: Risk + Time Impact stacked -->
+      <div style="display:flex;flex-direction:column;gap:8px;">
 
-      <!-- Per-leg improvement breakdown -->
-      <div id="podium-leg-breakdown" class="podium-improve" style="margin-top:8px;"></div>
-    </div>
+        <div class="risk-card">
+          <div class="risk-header">
+            <div class="risk-title">🌍 Environmental Challenge</div>
+            <div id="risk-circle" class="risk-score-circle" style="background:#22c55e">
+              <span id="risk-score-num">0</span>
+              <span class="risk-score-label" id="risk-cat-label">LOW</span>
+            </div>
+          </div>
+          <div class="risk-bars">
+            <div class="risk-row">
+              <span class="risk-row-label">WBGT thermal load</span>
+              <div class="risk-bar-bg"><div class="risk-bar-fill" id="bar-wbgt" style="width:0%;background:#ef4444"></div></div>
+              <span id="bar-wbgt-val" style="font-size:10px;width:24px;text-align:right;color:#64748b">0</span>
+            </div>
+            <div class="risk-row">
+              <span class="risk-row-label">Solar radiation</span>
+              <div class="risk-bar-bg"><div class="risk-bar-fill" id="bar-solar" style="width:0%;background:#f97316"></div></div>
+              <span id="bar-solar-val" style="font-size:10px;width:24px;text-align:right;color:#64748b">0</span>
+            </div>
+            <div class="risk-row">
+              <span class="risk-row-label">Low wind (still air)</span>
+              <div class="risk-bar-bg"><div class="risk-bar-fill" id="bar-wind" style="width:0%;background:#eab308"></div></div>
+              <span id="bar-wind-val" style="font-size:10px;width:24px;text-align:right;color:#64748b">0</span>
+            </div>
+            <div class="risk-row">
+              <span class="risk-row-label">Age factor</span>
+              <div class="risk-bar-bg"><div class="risk-bar-fill" id="bar-age" style="width:0%;background:#6366f1"></div></div>
+              <span id="bar-age-val" style="font-size:10px;width:24px;text-align:right;color:#64748b">0</span>
+            </div>
+          </div>
+          <div class="risk-recs" id="risk-recs"></div>
+        </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <!-- Absolute time impact -->
+        <div class="card" style="border-left:3px solid #f97316;">
+          <div class="card-title" style="margin-bottom:6px;font-size:12px;">
+            ⏱ Expected Time vs Cool Race
+            <span class="tip" data-tip="Estimated additional time vs the same race in cool conditions (WBGT ≈ 20°C). Below 25°C: linear model (slope × ΔWBGT). At WBGT ≥ 25°C: empirically validated threshold penalty from 39 race-sex observations. Run effect significant in both sexes (p=0.001); bike significant in men (p=0.010). n_hot=4 races only — treat with caution.">i</span>
+          </div>
+          <div id="time-impact-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;"></div>
+          <div id="time-impact-note" style="font-size:9px;color:#94a3b8;margin-top:5px;line-height:1.4;"></div>
+        </div>
+
+      </div><!-- /right column -->
+    </div><!-- /Row 1 -->
+
+    <!-- ── Row 2: Run chart | Bike chart ─────────────────────── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
       <div class="chart-card">
-        <h3>🏃 Run Performance vs WBGT</h3>
-        <div class="chart-container" style="height:230px;">
+        <h3>🏃 Run vs WBGT</h3>
+        <div class="chart-container" style="height:130px;">
           <div id="scenario-chart" style="width:100%;height:100%;"></div>
         </div>
       </div>
       <div class="chart-card">
-        <h3>🚴 Bike Pacing Scenarios vs WBGT</h3>
-        <div class="chart-container" style="height:230px;">
+        <h3>🚴 Bike Pacing vs WBGT</h3>
+        <div class="chart-container" style="height:130px;">
           <div id="bike-scenario-chart" style="width:100%;height:100%;"></div>
         </div>
       </div>
-    </div>
+    </div><!-- /Row 2 -->
 
-    <div class="chart-card" style="margin-top:10px;">
-      <h3>🏊 Swim Context vs Water Temperature</h3>
-      <div class="chart-container" style="height:220px;">
-        <div id="swim-water-chart" style="width:100%;height:100%;"></div>
-      </div>
-      <div style="font-size:10px;color:#94a3b8;margin-top:4px;text-align:center;">
-        Dashed line: wetsuit threshold (20°C). Water temp has no significant independent effect on z_swim after WBGT adjustment (partial r &lt; 0.03, p &gt; 0.55). Marker shows current race water temp.
-      </div>
-    </div>
-
-    <div class="risk-card">
-      <div class="risk-header">
-        <div class="risk-title">🌍 Environmental Challenge Expected</div>
-        <div id="risk-circle" class="risk-score-circle" style="background:#22c55e">
-          <span id="risk-score-num">0</span>
-          <span class="risk-score-label" id="risk-cat-label">LOW</span>
+    <!-- ── Row 3: Swim chart | Strategy ──────────────────────── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="chart-card">
+        <h3>🏊 Swim vs Water Temp</h3>
+        <div class="chart-container" style="height:130px;">
+          <div id="swim-water-chart" style="width:100%;height:100%;"></div>
+        </div>
+        <div style="font-size:9px;color:#94a3b8;margin-top:3px;text-align:center;">
+          Dashed line: wetsuit threshold (20°C). Water temp has no significant independent effect on z_swim after WBGT adjustment (partial r &lt; 0.07, p &gt; 0.07; 53 events).
         </div>
       </div>
-      <div class="risk-bars">
-        <div class="risk-row">
-          <span class="risk-row-label">WBGT thermal load</span>
-          <div class="risk-bar-bg"><div class="risk-bar-fill" id="bar-wbgt" style="width:0%;background:#ef4444"></div></div>
-          <span id="bar-wbgt-val" style="font-size:11px;width:28px;text-align:right;color:#64748b">0</span>
-        </div>
-        <div class="risk-row">
-          <span class="risk-row-label">Solar radiation</span>
-          <div class="risk-bar-bg"><div class="risk-bar-fill" id="bar-solar" style="width:0%;background:#f97316"></div></div>
-          <span id="bar-solar-val" style="font-size:11px;width:28px;text-align:right;color:#64748b">0</span>
-        </div>
-        <div class="risk-row">
-          <span class="risk-row-label">Low wind (still air)</span>
-          <div class="risk-bar-bg"><div class="risk-bar-fill" id="bar-wind" style="width:0%;background:#eab308"></div></div>
-          <span id="bar-wind-val" style="font-size:11px;width:28px;text-align:right;color:#64748b">0</span>
-        </div>
-        <div class="risk-row">
-          <span class="risk-row-label">Age factor</span>
-          <div class="risk-bar-bg"><div class="risk-bar-fill" id="bar-age" style="width:0%;background:#6366f1"></div></div>
-          <span id="bar-age-val" style="font-size:11px;width:28px;text-align:right;color:#64748b">0</span>
-        </div>
+      <div class="strategy-card">
+        <div class="card-title" style="font-size:12px;">📋 Race-Day Strategy Guidance</div>
+        <div id="strategy-content"></div>
       </div>
-      <div class="risk-recs" id="risk-recs"></div>
-    </div>
+    </div><!-- /Row 3 -->
 
-    <!-- ── Absolute time impact card ──────────────────────────────────── -->
-    <div class="card" style="margin-top:10px;border-left:4px solid #f97316;">
-      <div class="card-title" style="margin-bottom:8px;">
-        ⏱ Expected Time vs Cool Race
-        <span class="tip" data-tip="Estimated additional time vs the same race in cool conditions (WBGT ≈ 20°C). Below 25°C: linear model (slope × ΔWBGT). At WBGT ≥ 25°C: empirically validated threshold penalty from 39 race-sex observations. Run effect significant in both sexes (p=0.001); bike significant in men (p=0.010). n_hot=4 races only — treat with caution.">i</span>
-      </div>
-      <div id="time-impact-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
-      <div id="time-impact-note" style="font-size:10px;color:#94a3b8;margin-top:8px;line-height:1.4;"></div>
-    </div>
+  </div><!-- /right panel -->
+</div><!-- /main -->
 
-    <div class="strategy-card">
-      <div class="card-title">📋 Race-Day Strategy Guidance</div>
-      <div id="strategy-content"></div>
-    </div>
-
-  </div>
-</div>
-
-<footer>🏊‍♂️🚴‍♂️🏃‍♂️ &nbsp; Olympic Triathlon Digital Twin · Dr Marco Cardinale, PhD · 2026 · Population coefficients from mixed-effects model (n=3,449 athlete-races). For coaching use only.</footer>
+<footer>🏊‍♂️🚴‍♂️🏃‍♂️ &nbsp; Olympic Triathlon Digital Twin · Dr Marco Cardinale, PhD · 2026 · Mixed-effects model: n=7,415 athlete-races, 339 events, WBGT 301/339 (88.8%). For coaching use only.</footer>
 
 <script>
 // ── Model coefficients (from study) ──────────────────────────────────────
@@ -500,7 +511,7 @@ const BETA = {
   z_swim: 0.20, z_bike: 0.25, z_run: 0.55,
   heat_men: -0.006,    // z_run per °C above mean (p=0.002)
   heat_women: 0.000,   // not significant
-  wbgt_mean: 19.3
+  wbgt_mean: 18.9
 };
 
 // Elite field norms (mean ± SD in seconds) — from study population
@@ -938,7 +949,7 @@ function updateGauge(svgId, prob, maxPct) {
   const svg = document.getElementById(svgId);
   if (!svg) return;
 
-  const cx=100, cy=96, r=68, sw=13;
+  const cx=100, cy=82, r=58, sw=10;
   const clampedProb = Math.max(0, Math.min(maxPct, prob));
 
   // Sqrt scale for visual sensitivity at low end
@@ -992,7 +1003,7 @@ function updateGauge(svgId, prob, maxPct) {
     ${fillArc ? `<path d="${fillArc}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" opacity="0.9"/>` : ''}
     <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(2)}" y2="${ny.toFixed(2)}" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
     <circle cx="${cx}" cy="${cy}" r="5" fill="${color}"/>
-    <text x="${cx}" y="${cy-25}" text-anchor="middle" font-size="22" font-weight="800" fill="${color}" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">${prob.toFixed(1)}%</text>
+    <text x="${cx}" y="${cy-18}" text-anchor="middle" font-size="16" font-weight="800" fill="${color}" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">${prob.toFixed(1)}%</text>
     <text x="${lx-1}" y="${ly+15}" text-anchor="middle" font-size="8.5" fill="#94a3b8" font-family="-apple-system,BlinkMacSystemFont,sans-serif">0%</text>
     <text x="${rx+1}" y="${ry+15}" text-anchor="middle" font-size="8.5" fill="#94a3b8" font-family="-apple-system,BlinkMacSystemFont,sans-serif">${maxPct}%</text>
   `;
