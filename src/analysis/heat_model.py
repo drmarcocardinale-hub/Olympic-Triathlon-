@@ -18,8 +18,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 MASTER = ROOT / "data" / "processed" / "master.parquet"
 TAB = ROOT / "outputs" / "tables"
 
-MIN_RACES = 5          # per athlete to attempt an individual estimate
-MIN_WBGT_SPREAD = 4.0  # deg C between an athlete's coolest and hottest race
+MIN_RACES = 3          # per athlete to attempt an individual estimate
+MIN_WBGT_SPREAD = 3.0  # deg C between an athlete's coolest and hottest race
 
 
 def load(sex: str) -> pd.DataFrame:

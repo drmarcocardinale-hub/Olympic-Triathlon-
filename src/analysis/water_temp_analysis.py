@@ -27,10 +27,12 @@ Key thresholds
 Statistical note on partial correlations
 -----------------------------------------
 Partial r can only be computed on rows where BOTH water_temp_c AND
-race_day_wbgt are non-null simultaneously. This is a strict subset (23 events,
-n ≈ 659 rows) of the full finisher set (n = 1,657), because WBGT coverage and
-water temperature coverage do not perfectly overlap. Unadjusted r uses all
-rows with water_temp_c regardless of WBGT availability.
+race_day_wbgt are non-null simultaneously. After WBGT backfill (301/339 races,
+88.8%) the shared subset is 53 events (n ≈ 1,548 finisher rows), substantially
+larger than the pre-backfill subset (23 events, n ≈ 659). The expanded subset
+is more representative; partial r estimates are attenuated (men +0.043 p=0.21,
+women +0.068 p=0.07 — neither statistically significant).
+Unadjusted r uses all rows with water_temp_c regardless of WBGT availability.
 """
 from __future__ import annotations
 import json
