@@ -6,8 +6,8 @@ Environmental conditions are classified using World Triathlon Heat Stress
 flag thresholds (World Triathlon Technical Regulations):
   🟢 Green  < 25.7°C WBGT — Low heat stress
   🔵 Blue   25.7–27.8°C   — Moderate heat stress
-  🟠 Orange 27.9–30.0°C   — High heat stress
-  🔴 Red    30.1–32.2°C   — Very high heat stress
+  🟠 Orange 27.8–30.0°C   — High heat stress
+  🔴 Red    30.0–32.2°C   — Very high heat stress
   ⬛ Black  > 32.2°C      — Extreme heat stress
 
 Analysis approach:
@@ -47,13 +47,13 @@ OUTCOMES = [
     ("total_mean", "Total race time"),
 ]
 
-# World Triathlon flag categories
+# World Triathlon flag categories (correct WT Technical Regulations boundaries)
 WBGT_CATS = {
     "Green (<25.7°C)":      (0,    25.7),
-    "Blue (25.7–27.8°C)":   (25.7, 27.9),
-    "Orange (27.9–30.0°C)": (27.9, 30.1),
-    "Red (30.1–32.2°C)":    (30.1, 32.3),
-    "Black (>32.2°C)":      (32.3, 60),
+    "Blue (25.7–27.8°C)":   (25.7, 27.8),
+    "Orange (27.8–30.0°C)": (27.8, 30.0),
+    "Red (30.0–32.2°C)":    (30.0, 32.2),
+    "Black (>32.2°C)":      (32.2, 60),
 }
 
 
